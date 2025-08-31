@@ -210,7 +210,7 @@ const Index = () => {
           <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">🏠</span>
           </div>
-          <h1 className="text-xl font-bold text-white drop-shadow-sm">CleanSight AI</h1>
+          <h1 className="text-xl font-bold text-white drop-shadow-sm">Room Tidy AI</h1>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm text-white/80 bg-white/10 rounded-full px-3 py-2 backdrop-blur-sm">

@@ -21,39 +21,48 @@ export const ModernHero: React.FC<ModernHeroProps> = ({ onGetStarted }) => {
           
           {/* Title & Tagline */}
           <div className="space-y-6">
-            <h1 className="text-4xl sm:text-5xl font-bold text-white drop-shadow-lg leading-tight">
-              CleanSight AI
-            </h1>
-            <p className="text-xl text-white/90 drop-shadow-md leading-relaxed font-medium">
-              AI-powered cleaning assistant that guides you step-by-step
-            </p>
+          <h1 className="text-5xl sm:text-6xl font-black text-white leading-tight tracking-tight">
+            Room Tidy AI
+          </h1>
+          <p className="text-xl sm:text-2xl text-white/80 font-medium leading-relaxed max-w-2xl mx-auto">
+            AI-powered cleaning assistant that guides you step-by-step through smart organization
+          </p>
           </div>
 
           {/* CTA Button */}
-          <div className="pt-4">
+          <div className="pt-6">
             <Button 
               onClick={onGetStarted}
               size="lg"
-              className="w-full sm:w-auto bg-gradient-primary hover:shadow-glow text-white font-semibold px-12 py-4 text-lg shadow-medium hover:shadow-strong transition-all duration-300 transform hover:scale-105 rounded-xl"
+              className="glass-morphism btn-haptic hover:shadow-glow text-white font-semibold px-16 py-6 text-xl transition-all duration-300 rounded-2xl border-white/20 hover:bg-gradient-primary"
             >
-              <Upload className="mr-3 w-5 h-5" />
+              <Upload className="mr-4 w-6 h-6" />
               Get Started
             </Button>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
-            <div className="text-center space-y-2">
-              <div className="w-3 h-3 bg-white/80 rounded-full mx-auto animate-pulse" />
-              <p className="text-sm font-medium text-white/80 drop-shadow-sm">AI Analysis</p>
+          {/* Feature Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-12">
+            <div className="glass-morphism-light rounded-2xl p-6 text-center card-tilt animate-breathe">
+              <div className="w-12 h-12 bg-gradient-primary rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-glow">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <p className="font-semibold text-white mb-2">AI Analysis</p>
+              <p className="text-sm text-white/70">Smart room detection</p>
             </div>
-            <div className="text-center space-y-2">
-              <div className="w-3 h-3 bg-white/80 rounded-full mx-auto animate-pulse" style={{ animationDelay: '0.5s' }} />
-              <p className="text-sm font-medium text-white/80 drop-shadow-sm">Voice Guide</p>
+            <div className="glass-morphism-light rounded-2xl p-6 text-center card-tilt animate-breathe" style={{ animationDelay: '1s' }}>
+              <div className="w-12 h-12 bg-gradient-to-br from-success to-primary rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-glow">
+                <Upload className="w-6 h-6 text-white" />
+              </div>
+              <p className="font-semibold text-white mb-2">Voice Guide</p>
+              <p className="text-sm text-white/70">Step-by-step coaching</p>
             </div>
-            <div className="text-center space-y-2">
-              <div className="w-3 h-3 bg-white/80 rounded-full mx-auto animate-pulse" style={{ animationDelay: '1s' }} />
-              <p className="text-sm font-medium text-white/80 drop-shadow-sm">Smart Planning</p>
+            <div className="glass-morphism-light rounded-2xl p-6 text-center card-tilt animate-breathe" style={{ animationDelay: '2s' }}>
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-success rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-glow">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <p className="font-semibold text-white mb-2">Smart Planning</p>
+              <p className="text-sm text-white/70">Optimized workflows</p>
             </div>
           </div>
         </div>
