@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { ModernHero } from '@/components/ModernHero';
 import { VideoUpload } from '@/components/VideoUpload';
 import { ProcessingState } from '@/components/ProcessingState';
 import { DetectionReview } from '@/components/DetectionReview';
 import { TodoList } from '@/components/TodoList';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LogOut, User } from 'lucide-react';
 import { analyzeVideoWithGemini } from '@/services/googleVision';
 import { generateTodoList, breakdownTask } from '@/services/geminiApi';
 import { FloatingBackground } from '@/components/FloatingBackground';
@@ -38,6 +40,8 @@ interface Subtask {
 type AppState = 'hero' | 'upload' | 'processing' | 'detection' | 'generating' | 'results';
 
 const Index = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [appState, setAppState] = useState<AppState>('hero');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
@@ -49,6 +53,17 @@ const Index = () => {
   const { toast } = useToast();
 
   const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
 
   const handleGetStarted = () => {
     setAppState('upload');
@@ -184,9 +199,30 @@ const Index = () => {
     setTasks([]);
   };
 
+  if (!user) {
+    return null;
+  }
+
+  const renderHeader = () => (
+    <header className="relative z-20 container mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 className="text-xl font-semibold">Room Cleanup AI</h1>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <User className="h-4 w-4" />
+          <span>{user.email}</span>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleSignOut}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign out
+        </Button>
+      </div>
+    </header>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
       <FloatingBackground />
+      {renderHeader()}
       
       {appState === 'hero' && (
         <ModernHero onGetStarted={handleGetStarted} />
