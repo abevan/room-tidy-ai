@@ -6,12 +6,27 @@ import { VideoUpload } from '@/components/VideoUpload';
 import { ProcessingState } from '@/components/ProcessingState';
 import { DetectionReview } from '@/components/DetectionReview';
 import { TodoList } from '@/components/TodoList';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, LogOut, User } from 'lucide-react';
 import { analyzeVideoWithGemini } from '@/services/googleVision';
 import { generateTodoList, breakdownTask } from '@/services/geminiApi';
 import { FloatingBackground } from '@/components/FloatingBackground';
 import { useToast } from '@/hooks/use-toast';
+import { usePWA } from '@/hooks/usePWA';
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
+}
 
 
 interface DetectedItem {
@@ -41,6 +56,7 @@ type AppState = 'hero' | 'upload' | 'processing' | 'detection' | 'generating' | 
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { isInstallable } = usePWA();
   const navigate = useNavigate();
   const [appState, setAppState] = useState<AppState>('hero');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -50,6 +66,7 @@ const Index = () => {
   const [detectedItems, setDetectedItems] = useState<DetectedItem[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const { toast } = useToast();
 
   const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
@@ -59,6 +76,16 @@ const Index = () => {
       navigate('/auth');
     }
   }, [user, navigate]);
+
+  // Show install prompt after 10 seconds if app is installable
+  useEffect(() => {
+    if (isInstallable) {
+      const timer = setTimeout(() => {
+        setShowInstallPrompt(true);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [isInstallable]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -327,6 +354,11 @@ const Index = () => {
             </div>
           )}
         </div>
+      )}
+      
+      {/* PWA Install Prompt */}
+      {showInstallPrompt && (
+        <PWAInstallPrompt onClose={() => setShowInstallPrompt(false)} />
       )}
     </div>
   );

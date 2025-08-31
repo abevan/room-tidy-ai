@@ -2,18 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Room Tidy AI - Smart Cleaning Assistant</title>
     <meta name="description" content="AI-powered cleaning assistant that guides you step-by-step through room organization with Apple-inspired design and smart task generation." />
     <meta name="author" content="Room Tidy AI" />
     <meta name="keywords" content="room cleaning, AI assistant, organization, productivity, home cleaning, task management, Apple design" />
 
-    <!-- PWA Configuration -->
-    <meta name="theme-color" content="#007AFF" />
+    <!-- Enhanced PWA Configuration -->
+    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Room Tidy AI" />
+    <meta name="apple-touch-fullscreen" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
     <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/cleaning.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="https://img.icons8.com/fluency/192/cleaning.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/fluency/192/cleaning.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="https://img.icons8.com/fluency/192/cleaning.png" />
+    
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" href="https://img.icons8.com/fluency/512/cleaning.png" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,6 +44,31 @@
     <meta name="twitter:title" content="Room Tidy AI - Smart Cleaning Assistant" />
     <meta name="twitter:description" content="AI-powered cleaning assistant with Apple-inspired design and smart task generation." />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- Prevent zoom on mobile -->
+    <style>
+      * {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      html, body {
+        height: 100vh;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        /* Full screen on mobile */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
+      
+      #root {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+      }
+    </style>
   </head>
 
   <body>

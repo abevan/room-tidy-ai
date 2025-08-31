@@ -73,6 +73,9 @@ export const generateStepByStepGuidance = async (taskDescription: string, subtas
 
 export const speakText = async (text: string, volume: number = 0.8): Promise<void> => {
   try {
+    console.log('🎵 TTS: Starting speech generation with ElevenLabs API');
+    console.log('🎵 TTS: Text length:', text.length, 'characters');
+    
     // Use premium ElevenLabs API for high-quality voice
     const response = await fetch('https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/text-to-speech', {
       method: 'POST',
@@ -82,29 +85,42 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
       body: JSON.stringify({ text }),
     });
 
+    console.log('🎵 TTS: ElevenLabs API response status:', response.status);
+
     if (response.ok) {
       const audioData = await response.arrayBuffer();
+      console.log('🎵 TTS: Received audio data, size:', audioData.byteLength, 'bytes');
+      
       const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       audio.volume = volume;
       
+      console.log('🎵 TTS: Starting audio playback with ElevenLabs voice');
+      
       return new Promise((resolve, reject) => {
         audio.onended = () => {
+          console.log('🎵 TTS: Audio playback completed successfully');
           URL.revokeObjectURL(audioUrl);
           resolve();
         };
-        audio.onerror = () => {
+        audio.onerror = (error) => {
+          console.error('🎵 TTS: Audio playback error:', error);
           URL.revokeObjectURL(audioUrl);
           reject(new Error('Audio playback failed'));
         };
-        audio.play();
+        audio.play().catch(error => {
+          console.error('🎵 TTS: Audio play() failed:', error);
+          reject(error);
+        });
       });
     } else {
-      throw new Error('ElevenLabs TTS API failed, falling back to browser speech');
+      const errorText = await response.text();
+      console.error('🎵 TTS: ElevenLabs API failed:', response.status, errorText);
+      throw new Error(`ElevenLabs API failed: ${response.status} ${errorText}`);
     }
   } catch (error) {
-    console.warn('ElevenLabs TTS failed, using browser speech synthesis:', error);
+    console.warn('🎵 TTS: ElevenLabs failed, falling back to browser speech:', error);
     
     // Fallback to browser speech synthesis with better voice selection
     return new Promise((resolve, reject) => {
@@ -113,36 +129,52 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
         return;
       }
 
+      // Cancel any ongoing speech
+      speechSynthesis.cancel();
+      
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
+      utterance.rate = 0.95;
       utterance.pitch = 1.0;
       utterance.volume = volume;
       
       // Select the best available voice
       const selectBestVoice = () => {
         const voices = speechSynthesis.getVoices();
+        console.log('🎵 TTS: Available voices:', voices.map(v => v.name));
         
         // Look for premium voices in order of preference
         const premiumVoices = [
-          'Google US English',
           'Microsoft Aria Online (Natural) - English (United States)',
-          'Microsoft Jenny Online (Natural) - English (United States)',
+          'Microsoft Jenny Online (Natural) - English (United States)', 
+          'Microsoft Emma Online (Natural) - English (United States)',
+          'Google US English',
           'Samantha',
           'Alex',
+          'Karen',
+          'Moira',
+          'Tessa'
         ];
         
         for (const voiceName of premiumVoices) {
-          const voice = voices.find(v => v.name.includes(voiceName) || v.name === voiceName);
+          const voice = voices.find(v => 
+            v.name.includes(voiceName) || 
+            v.name === voiceName ||
+            v.name.toLowerCase().includes(voiceName.toLowerCase())
+          );
           if (voice) {
+            console.log('🎵 TTS: Selected voice:', voice.name);
             utterance.voice = voice;
             break;
           }
         }
         
-        // If no premium voice found, use the default English voice
+        // If no premium voice found, use the best English voice available
         if (!utterance.voice) {
-          const englishVoice = voices.find(v => v.lang.startsWith('en-'));
-          if (englishVoice) utterance.voice = englishVoice;
+          const englishVoices = voices.filter(v => v.lang.startsWith('en-'));
+          if (englishVoices.length > 0) {
+            utterance.voice = englishVoices[0];
+            console.log('🎵 TTS: Fallback to English voice:', utterance.voice.name);
+          }
         }
       };
 
@@ -151,12 +183,25 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
       
       // If no voices available, wait for them to load
       if (speechSynthesis.getVoices().length === 0) {
+        console.log('🎵 TTS: Waiting for voices to load...');
         speechSynthesis.addEventListener('voiceschanged', selectBestVoice, { once: true });
       }
 
-      utterance.onend = () => resolve();
-      utterance.onerror = (event) => reject(event.error);
+      utterance.onstart = () => {
+        console.log('🎵 TTS: Browser speech started with voice:', utterance.voice?.name || 'default');
+      };
+      
+      utterance.onend = () => {
+        console.log('🎵 TTS: Browser speech completed');
+        resolve();
+      };
+      
+      utterance.onerror = (event) => {
+        console.error('🎵 TTS: Browser speech error:', event.error);
+        reject(new Error(`Browser speech error: ${event.error}`));
+      };
 
+      console.log('🎵 TTS: Starting browser speech synthesis');
       speechSynthesis.speak(utterance);
     });
   }
