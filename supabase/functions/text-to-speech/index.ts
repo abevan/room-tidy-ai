@@ -8,7 +8,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text } = await req.json()
+    const { text, voice_id, model_id } = await req.json()
 
     if (!text) {
       return new Response(
@@ -25,8 +25,19 @@ serve(async (req) => {
       )
     }
 
-    // Use ElevenLabs API with premium voice (Aria - natural and friendly)
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x', {
+    // Use provided voice_id or default to Aria
+    const voiceId = voice_id || '9BWtsMINqrJLrRacOk9x'
+    const modelId = model_id || 'eleven_multilingual_v2'
+
+    console.log('TTS Request:', { 
+      textLength: text.length, 
+      voiceId, 
+      modelId,
+      textPreview: text.substring(0, 100) 
+    })
+
+    // Use ElevenLabs API with specified voice and model
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
@@ -35,7 +46,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         text: text,
-        model_id: 'eleven_multilingual_v2',
+        model_id: modelId,
         voice_settings: {
           stability: 0.5,
           similarity_boost: 0.8,
