@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { analyzeVideoWithGemini } from '@/services/googleVision';
 import { generateTodoList, breakdownTask } from '@/services/geminiApi';
+import { generateCleaningMotivation, speakText, stopSpeaking } from '@/services/voiceService';
 import { useToast } from '@/hooks/use-toast';
 
 // Mock data for demonstration - Updated to match API types
@@ -104,6 +105,7 @@ const Index = () => {
   const [processingProgress, setProcessingProgress] = useState(0);
   const [detectedItems, setDetectedItems] = useState<DetectedItem[]>([]);
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
 
   // Set the provided API key on app load
@@ -207,8 +209,19 @@ const Index = () => {
       setTasks(generatedTasks);
       setProcessingProgress(100);
       
-      setTimeout(() => {
+      setTimeout(async () => {
         setAppState('results');
+        
+        // Generate and speak motivational message
+        try {
+          const motivationText = generateCleaningMotivation(generatedTasks, generatedTasks.reduce((sum, task) => sum + task.timeEstimate, 0));
+          setIsPlaying(true);
+          await speakText(motivationText);
+          setIsPlaying(false);
+        } catch (error) {
+          console.log('Voice synthesis not available or failed');
+          setIsPlaying(false);
+        }
       }, 1000);
       
     } catch (error) {
