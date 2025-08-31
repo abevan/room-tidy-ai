@@ -67,57 +67,78 @@ async function generateTaskList(items: DetectedItem[]) {
 
 const prompt = `Based on these detected items: ${JSON.stringify(items)}
 
-INTELLIGENT TASK GENERATION WITH SMART COMPLEXITY RECOGNITION:
+ULTRA-INTELLIGENT TASK GENERATION WITH ENHANCED TIMING & BREAKDOWN:
 
-TASK COMPLEXITY CLASSIFICATION:
-🟢 SIMPLE TASKS (1-3 minutes, no subtasks needed):
-- Make bed, put away single items, quick tidying, hang towel, close drawers
+TASK COMPLEXITY CLASSIFICATION WITH MICRO-TASKS:
+🔵 MICRO TASKS (30 seconds - 2 minutes, individual actions):
+- Put away single item, hang one towel, close drawer, turn off light, put book back
 
-🟡 MEDIUM TASKS (4-8 minutes, may need 2-3 substeps):
-- Wash dishes, organize desk, put away groceries, tidy bathroom counter
+🟢 SIMPLE TASKS (2-4 minutes, straightforward actions):
+- Make bed, tidy small surface, put away 2-3 items, quick bathroom wipe
 
-🔴 COMPLEX TASKS (require detailed subtask breakdown):
-- Do laundry, deep clean kitchen, organize entire room, meal prep
+🟡 MEDIUM TASKS (4-8 minutes, multi-step but contained):
+- Organize desk completely, tidy bathroom counter, sort mail pile
 
-VISUAL CONTEXT → SMART TASK MAPPING:
+🔴 COMPLEX TASKS (8+ minutes, MANDATORY subtask breakdown):
+- Any laundry operation, kitchen cleaning, room organization, multiple similar items
 
-LAUNDRY DETECTION:
-- Clothes near hamper/basket → COMPLEX: "Complete laundry cycle" with subtasks:
-  * Gather and sort clothes (3 min)
-  * Load washer and start cycle (2 min)  
-  * Transfer to dryer (2 min)
-  * Remove and fold clean clothes (8 min)
-- Few scattered clothes → SIMPLE: "Put away clothes" (2 min)
+CONTEXT-AWARE INTELLIGENCE SYSTEM:
 
-KITCHEN DETECTION:
-- Multiple dirty dishes → COMPLEX: "Clean kitchen thoroughly" with subtasks:
-  * Clear and rinse dishes (4 min)
-  * Load dishwasher or hand wash (6 min)
-  * Wipe counters and surfaces (3 min)
-  * Put away clean items (2 min)
-- Single plate/cup → SIMPLE: "Wash and put away dish" (2 min)
+VOLUME DETECTION TRIGGERS:
+- 3+ similar items detected = COMPLEX breakdown required
+- High confidence (>0.8) = likely multiple items = detailed subtasks
+- Low confidence (<0.5) = single item = micro/simple task
 
-SHOE ORGANIZATION:
-- Multiple shoes scattered → MEDIUM: "Organize footwear" (3 min)
-- 1-2 pairs → SIMPLE: "Put away shoes" (1 min)
+LAUNDRY BASKET INTELLIGENCE:
+- Laundry basket/hamper detected → COMPLEX: "Complete laundry process" with subtasks:
+  * Gather and sort dirty clothes by color (3 min)
+  * Load washer with detergent (2 min)
+  * Transfer wet clothes to dryer (1 min)
+  * Remove dry clothes and fold systematically (7 min)
+  * Put away folded clothes in proper locations (4 min)
 
-BEDROOM DETECTION:
-- Unmade bed only → SIMPLE: "Make bed" (2 min)
-- Clothes + unmade bed → COMPLEX: "Organize bedroom" with subtasks:
-  * Make bed properly (2 min)
-  * Sort and put away clothes (5 min)
-  * Clear surfaces and organize (4 min)
+DISH PILE INTELLIGENCE:
+- Multiple dishes/glasses → COMPLEX: "Clean kitchen dishes thoroughly" with subtasks:
+  * Scrape and rinse all dishes (3 min)
+  * Fill sink or load dishwasher (2 min)
+  * Wash dishes or run dishwasher cycle (5 min)
+  * Dry and put away clean dishes (3 min)
 
-REALISTIC TIME ESTIMATES BY COMPLEXITY:
-🟢 Simple: 1-3 minutes (put away 2-3 items, make bed, quick wipe)
-🟡 Medium: 4-8 minutes (organize desk, tidy bathroom, sort mail)  
-🔴 Complex: Split into logical subtasks with realistic step times
+CLOTHING PILE INTELLIGENCE:
+- Clothes scattered + high confidence → COMPLEX: "Organize clothing systematically" with subtasks:
+  * Sort clothes by type and destination (4 min)
+  * Hang items that wrinkle easily (3 min)
+  * Fold and put away remaining clothes (6 min)
 
-SUBTASK GENERATION RULES FOR COMPLEX TASKS:
-- Preparation steps (gather, sort, clear): 2-4 min
-- Active work steps (wash, load, organize): 3-8 min
-- Finishing steps (put away, wipe down): 2-5 min
-- NEVER exceed 10 minutes for a single subtask
+BATHROOM ORGANIZATION:
+- Multiple bathroom items → COMPLEX: "Organize bathroom completely" with subtasks:
+  * Clear and organize counter surfaces (4 min)
+  * Put toiletries in proper places (3 min)
+  * Wipe surfaces clean (2 min)
+  * Replace towels and organize linens (3 min)
+
+ENHANCED TIME ACCURACY SYSTEM:
+🔵 Micro: 30s-2min (single actions, no walking between rooms)
+🟢 Simple: 2-4min (contained actions, minimal prep)
+🟡 Medium: 4-8min (multi-step, some supplies needed)
+🔴 Complex: Split into 2-8min subtasks (include transition time)
+
+TRANSITION TIME INTELLIGENCE:
+- Add 30-60 seconds for tasks requiring supplies
+- Add 1-2 minutes for tasks spanning multiple rooms
+- Group related tasks by location for efficiency
+
+CONTEXT-AWARE TASK DESCRIPTIONS:
+- Reference specific detected items and locations
+- Include efficiency tips and supply needs
+- Make descriptions actionable and motivating
+
+MANDATORY BREAKDOWN RULES FOR COMPLEX TASKS:
+- NEVER allow single tasks >10 minutes
+- Break laundry baskets into 4-5 logical steps
+- Break dish piles into preparation→cleaning→finishing
+- Include supply gathering as separate subtask when needed
+- Sequence tasks logically (clear before clean, sort before store)
 
 Return JSON array. For COMPLEX tasks, include "subtasks" array:
 {
