@@ -76,7 +76,7 @@ export const speakText = async (text: string, voiceId: string = '9BWtsMINqrJLrRa
         currentAudio = null;
       }
 
-      console.log('Calling ElevenLabs TTS with text:', text.substring(0, 50) + '...');
+      console.log('🎵 Starting TTS request for text:', text.substring(0, 50) + '...');
       
       const response = await fetch('https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/text-to-speech', {
         method: 'POST',
@@ -85,44 +85,65 @@ export const speakText = async (text: string, voiceId: string = '9BWtsMINqrJLrRa
           'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM`
         },
         body: JSON.stringify({
-          text,
+          text: text.substring(0, 500), // Limit text length
           voice_id: voiceId,
           model_id: 'eleven_multilingual_v2'
         }),
       });
 
-      console.log('TTS response status:', response.status);
+      console.log('🎵 TTS response status:', response.status);
+      console.log('🎵 Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('TTS error:', errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        console.error('🎵 TTS API Error:', response.status, errorText);
+        throw new Error(`TTS failed: ${response.status} - ${errorText}`);
+      }
+
+      // Check if response is audio
+      const contentType = response.headers.get('content-type');
+      console.log('🎵 Content type:', contentType);
+      
+      if (contentType?.includes('application/json')) {
+        const errorData = await response.json();
+        console.error('🎵 TTS returned JSON error:', errorData);
+        throw new Error('TTS service returned error: ' + JSON.stringify(errorData));
       }
 
       const audioBlob = await response.blob();
+      console.log('🎵 Audio blob size:', audioBlob.size, 'type:', audioBlob.type);
+      
+      if (audioBlob.size === 0) {
+        throw new Error('Received empty audio response');
+      }
+      
       const audioUrl = URL.createObjectURL(audioBlob);
       
-      console.log('Audio blob created, playing...');
+      console.log('🎵 Creating audio element and playing...');
       currentAudio = new Audio(audioUrl);
       
+      currentAudio.onloadstart = () => console.log('🎵 Audio loading started');
+      currentAudio.oncanplay = () => console.log('🎵 Audio can play');
+      currentAudio.onplay = () => console.log('🎵 Audio playback started');
+      
       currentAudio.onended = () => {
-        console.log('Audio playback ended');
+        console.log('🎵 Audio playback ended');
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
         resolve();
       };
       
       currentAudio.onerror = (error) => {
-        console.error('Audio playback error:', error);
+        console.error('🎵 Audio playback error:', error);
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
-        reject(error);
+        reject(new Error('Audio playback failed'));
       };
       
       await currentAudio.play();
-      console.log('Audio playback started');
+      console.log('🎵 Audio play() called successfully');
     } catch (error) {
-      console.error('ElevenLabs TTS error:', error);
+      console.error('🎵 TTS Error:', error);
       reject(error);
     }
   });

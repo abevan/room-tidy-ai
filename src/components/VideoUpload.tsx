@@ -211,7 +211,8 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
 
   const confirmRecordedVideo = async () => {
     if (recordedVideo) {
-      // Skip validation for camera-recorded videos
+      console.log('Confirming recorded video:', recordedVideo.name, recordedVideo.size, recordedVideo.type);
+      
       setSelectedFile(recordedVideo);
       const url = URL.createObjectURL(recordedVideo);
       setVideoPreview(url);

@@ -162,35 +162,40 @@ export const analyzeImageWithGemini = async (imageBlob: Blob): Promise<DetectedO
 export const analyzeVideoWithGemini = async (videoFile: File): Promise<DetectedObject[]> => {
   try {
     console.log('=== Starting video analysis ===');
+    console.log('Video file details:', {
+      name: videoFile.name,
+      size: videoFile.size,
+      type: videoFile.type,
+      isCameraRecorded: videoFile.name.includes('room-video-')
+    });
     
     // Input validation
     if (!videoFile || videoFile.size === 0) {
       throw new Error('Invalid video file');
     }
 
-    console.log('Video file details:', {
-      name: videoFile.name,
-      size: videoFile.size,
-      type: videoFile.type
-    });
-
     // Validate file type
     if (!videoFile.type.startsWith('video/')) {
       throw new Error('File must be a video');
     }
 
-    // Validate file size (max 50MB)
-    if (videoFile.size > 50 * 1024 * 1024) {
-      throw new Error('Video file too large (max 50MB)');
+    // More lenient file size validation for camera recordings
+    const maxSize = videoFile.name.includes('room-video-') ? 100 * 1024 * 1024 : 50 * 1024 * 1024; // 100MB for camera, 50MB for uploads
+    if (videoFile.size > maxSize) {
+      throw new Error(`Video file too large (max ${maxSize / (1024 * 1024)}MB)`);
     }
 
-    // Validate duration (max 60 seconds)
-    console.log('Checking video duration...');
-    const duration = await getVideoDuration(videoFile);
-    console.log('Video duration:', duration, 'seconds');
-    
-    if (duration > 60) {
-      throw new Error('Video must be 60 seconds or less');
+    // Skip duration validation for camera-recorded videos
+    if (!videoFile.name.includes('room-video-')) {
+      console.log('Checking video duration...');
+      const duration = await getVideoDuration(videoFile);
+      console.log('Video duration:', duration, 'seconds');
+      
+      if (duration > 60) {
+        throw new Error('Video must be 60 seconds or less');
+      }
+    } else {
+      console.log('Skipping duration check for camera-recorded video');
     }
 
     console.log('Starting frame extraction...');
