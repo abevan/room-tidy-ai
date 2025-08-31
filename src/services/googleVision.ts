@@ -162,11 +162,46 @@ export const analyzeVideoWithGemini = async (videoFile: File, apiKey: string): P
     const uniqueItems = new Map<string, DetectedObject>();
     
     allDetections.forEach(item => {
-      const key = item.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-      if (!uniqueItems.has(key) || uniqueItems.get(key)!.confidence < item.confidence) {
+      const normalizedName = item.name.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // Check for similar items by comparing normalized names
+      let foundSimilar = false;
+      for (const [existingKey, existingItem] of uniqueItems.entries()) {
+        const existingNormalized = existingItem.name.toLowerCase()
+          .replace(/[^a-z0-9\s]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        // Check similarity - if 70% of words match, consider them similar
+        const itemWords = normalizedName.split(' ');
+        const existingWords = existingNormalized.split(' ');
+        const commonWords = itemWords.filter(word => existingWords.includes(word));
+        const similarity = commonWords.length / Math.max(itemWords.length, existingWords.length);
+        
+        if (similarity > 0.7) {
+          // Merge with existing item if this one has higher confidence
+          if (item.confidence > existingItem.confidence) {
+            uniqueItems.set(existingKey, {
+              ...item,
+              id: existingItem.id,
+              // Keep the more specific name (usually longer)
+              name: item.name.length > existingItem.name.length ? item.name : existingItem.name
+            });
+          }
+          foundSimilar = true;
+          break;
+        }
+      }
+      
+      // If no similar item found, add as new
+      if (!foundSimilar) {
+        const key = normalizedName.replace(/\s+/g, '_');
         uniqueItems.set(key, {
           ...item,
-          id: `merged_${key.replace(/\s+/g, '_')}`
+          id: `merged_${key}`
         });
       }
     });

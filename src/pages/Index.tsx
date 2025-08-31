@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { HeroSection } from '@/components/HeroSection';
+import React, { useState, useEffect } from 'react';
+import { ModernHero } from '@/components/ModernHero';
 import { ApiKeySetup } from '@/components/ApiKeySetup';
 import { VideoUpload } from '@/components/VideoUpload';
 import { ProcessingState } from '@/components/ProcessingState';
@@ -268,131 +268,121 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      <div className="container mx-auto px-4 py-8">
-        {appState === 'hero' && (
-          <div>
-            <HeroSection />
-            <div className="text-center mt-8">
-              <Button 
-                variant="hero" 
-                size="lg" 
-                onClick={handleGetStarted}
-                className="text-lg px-12 py-6"
-              >
-                Get Started - Upload Your Room Video
-              </Button>
-            </div>
-          </div>
-        )}
+    <div className="min-h-screen bg-gradient-hero relative">
+      {appState === 'hero' && (
+        <ModernHero onGetStarted={handleGetStarted} />
+      )}
 
-        {appState === 'apikey' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <Button 
-                variant="ghost" 
-                onClick={handleStartOver}
-                className="mb-4"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
-              </Button>
-              <h1 className="text-3xl font-bold mb-4">Setup Google APIs</h1>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                To use AI-powered room analysis, you need a Google Cloud Console API key with 
-                Cloud Vision API and Gemini API enabled.
-              </p>
+      {appState !== 'hero' && (
+        <div className="relative z-10 container mx-auto px-4 py-8">
+          {appState === 'apikey' && (
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <Button 
+                  variant="ghost" 
+                  onClick={handleStartOver}
+                  className="mb-4"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Home
+                </Button>
+                <h1 className="text-3xl font-bold mb-4">Setup Google APIs</h1>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  To use AI-powered room analysis, you need a Google Cloud Console API key with 
+                  Cloud Vision API and Gemini API enabled.
+                </p>
+              </div>
+              <ApiKeySetup onApiKeySet={handleApiKeySet} />
             </div>
-            <ApiKeySetup onApiKeySet={handleApiKeySet} />
-          </div>
-        )}
+          )}
 
-        {appState === 'upload' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <Button 
-                variant="ghost" 
-                onClick={handleStartOver}
-                className="mb-4"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
-              </Button>
-              <h1 className="text-3xl font-bold mb-4">Upload Your Room Video</h1>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Record a short video of your room (30-60 seconds) showing the areas that need cleaning. 
-                Our AI will analyze it and create a personalized cleanup plan.
-              </p>
+          {appState === 'upload' && (
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <Button 
+                  variant="ghost" 
+                  onClick={handleStartOver}
+                  className="mb-4"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Home
+                </Button>
+                <h1 className="text-3xl font-bold mb-4">Upload Your Room Video</h1>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  Record a short video of your room (30-60 seconds) showing the areas that need cleaning. 
+                  Our AI will analyze it and create a personalized cleanup plan.
+                </p>
+              </div>
+              <VideoUpload 
+                onVideoSelect={handleVideoSelect}
+                onProcessStart={handleProcessStart}
+              />
             </div>
-            <VideoUpload 
-              onVideoSelect={handleVideoSelect}
-              onProcessStart={handleProcessStart}
-            />
-          </div>
-        )}
+          )}
 
-        {(appState === 'processing' || appState === 'generating') && (
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <Button 
-                variant="ghost" 
-                onClick={handleBackToUpload}
-                className="mb-4"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Upload
-              </Button>
+          {(appState === 'processing' || appState === 'generating') && (
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <Button 
+                  variant="ghost" 
+                  onClick={handleBackToUpload}
+                  className="mb-4"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Upload
+                </Button>
+              </div>
+              <ProcessingState 
+                currentStep={processingStep}
+                progress={processingProgress}
+                isGenerating={appState === 'generating'}
+              />
             </div>
-            <ProcessingState 
-              currentStep={processingStep}
-              progress={processingProgress}
-              isGenerating={appState === 'generating'}
-            />
-          </div>
-        )}
+          )}
 
-        {appState === 'detection' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <Button 
-                variant="ghost" 
-                onClick={handleBackToUpload}
-                className="mb-4"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Upload
-              </Button>
+          {appState === 'detection' && (
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <Button 
+                  variant="ghost" 
+                  onClick={handleBackToUpload}
+                  className="mb-4"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Upload
+                </Button>
+              </div>
+              <DetectionReview
+                detectedItems={detectedItems}
+                onItemsConfirmed={handleItemsConfirmed}
+                videoPreview={videoPreview}
+              />
             </div>
-            <DetectionReview
-              detectedItems={detectedItems}
-              onItemsConfirmed={handleItemsConfirmed}
-              videoPreview={videoPreview}
-            />
-          </div>
-        )}
+          )}
 
-        {appState === 'results' && (
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-8">
-              <Button 
-                variant="ghost" 
-                onClick={handleStartOver}
-                className="mb-4"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Start Over
-              </Button>
+          {appState === 'results' && (
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-8">
+                <Button 
+                  variant="ghost" 
+                  onClick={handleStartOver}
+                  className="mb-4"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Start Over
+                </Button>
+              </div>
+              <TodoList
+                tasks={tasks}
+                totalTime={totalTime}
+                onTaskToggle={handleTaskToggle}
+                onSubtaskToggle={handleSubtaskToggle}
+                onTaskBreakdown={handleTaskBreakdown}
+              />
             </div>
-            <TodoList
-              tasks={tasks}
-              totalTime={totalTime}
-              onTaskToggle={handleTaskToggle}
-              onSubtaskToggle={handleSubtaskToggle}
-              onTaskBreakdown={handleTaskBreakdown}
-            />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
