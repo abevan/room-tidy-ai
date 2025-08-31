@@ -77,15 +77,17 @@ const Index = () => {
     }
   }, [user, navigate]);
 
-  // Show install prompt after 10 seconds if app is installable
+  // Show install prompt after 5 seconds if app is installable
   useEffect(() => {
-    if (isInstallable) {
+    if (isInstallable && !showInstallPrompt) {
+      console.log('🔧 PWA: App is installable, showing prompt in 5 seconds');
       const timer = setTimeout(() => {
+        console.log('🔧 PWA: Showing install prompt now');
         setShowInstallPrompt(true);
-      }, 10000);
+      }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [isInstallable]);
+  }, [isInstallable, showInstallPrompt]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -231,24 +233,24 @@ const Index = () => {
   }
 
   const renderHeader = () => (
-    <header className="relative z-20 backdrop-blur-sm bg-white/10 border-b border-white/20">
+    <header className="relative z-20 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-gradient-to-r from-primary to-blue-500 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">🏠</span>
           </div>
-          <h1 className="text-xl font-bold text-white drop-shadow-sm">Room Tidy AI</h1>
+          <h1 className="text-xl font-bold text-gray-900">Room Tidy AI</h1>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-white/80 bg-white/10 rounded-full px-3 py-2 backdrop-blur-sm">
+          <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 rounded-full px-3 py-2">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">{user.email}</span>
           </div>
           <Button 
-            variant="secondary" 
+            variant="outline" 
             size="sm" 
             onClick={handleSignOut}
-            className="bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm"
+            className="bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 hover:text-gray-900"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Sign out

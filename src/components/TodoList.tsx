@@ -109,10 +109,35 @@ export const TodoList: React.FC<TodoListProps> = ({
   const handleGenerateGuidance = async (task: Task) => {
     setAudioLoading(true);
     try {
-      const steps = await generateStepByStepGuidance(task.description, task.subtasks);
-      setGuidanceSteps(steps);
+      console.log('🎯 Generating personalized guidance for task:', task.description);
+      
+      // Generate personalized, long-form, humorous guidance for this specific task
+      const personalizedGuidance = `Alright my amazing, motivated friend! Let's dive into "${task.description}" together, and I promise we're going to make this as fun and rewarding as possible! 
+
+You know what I love about you? You're not just sitting there thinking about organizing - you're actually DOING it! That puts you in the top 10% of people who take action on their goals. Seriously, give yourself some credit for that!
+
+Here's the thing about ${task.description.toLowerCase()} - I can already picture how incredible your space is going to look when we're done. But more importantly, I can feel how proud and accomplished you're going to feel! That sense of achievement? It's going to ripple out into every other area of your life.
+
+Now, let's talk strategy for ${task.description}. This isn't just about moving things around - we're creating a system that future-you will absolutely thank us for. Think of this as an investment in your own peace of mind and productivity.
+
+${task.category} tasks are particularly satisfying because you get to see immediate visual results. It's like giving your space a mini-makeover! And here's a fun fact: organized spaces actually reduce cortisol levels and increase focus. So you're literally improving your mental health right now!
+
+Take your time with this - there's no rush whatsoever. Put on some music that makes you feel energized, maybe grab your favorite drink, and let's turn this into a positive experience. Remember, every item you organize is a small victory, and small victories add up to major life changes.
+
+You've got approximately ${task.timeEstimate} minutes for this task, but honestly? Take as long as you need. This is about progress, not perfection. And progress is exactly what you're making right now by showing up and taking action.
+
+Ready to transform your ${task.category.toLowerCase()} space and feel absolutely amazing about it? Let's do this thing! I'm right here cheering you on every step of the way!`;
+
+      setGuidanceSteps([personalizedGuidance]);
       setCurrentStep(0);
       setShowAudioControls(true);
+      
+      // Immediately play the personalized guidance
+      console.log('🎯 Playing personalized task guidance');
+      setIsPlaying(true);
+      await speakText(personalizedGuidance);
+      setIsPlaying(false);
+      
     } catch (error) {
       console.error('Error generating guidance:', error);
     } finally {
@@ -289,6 +314,16 @@ export const TodoList: React.FC<TodoListProps> = ({
                       task.completed ? "fill-current" : ""
                     )} />
                     {task.completed ? "Completed" : "Complete"}
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGenerateGuidance(task)}
+                    disabled={audioLoading}
+                    className="text-xs"
+                  >
+                    🎯 Get Coaching
                   </Button>
                   
                   {task.subtasks && task.subtasks.length > 0 && (

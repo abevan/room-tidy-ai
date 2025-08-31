@@ -98,11 +98,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             </div>
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              CleanSight AI
+            <h1 className="text-2xl font-bold text-gray-900">
+              Room Tidy AI
             </h1>
-            <CardTitle className="text-lg font-semibold text-foreground">
-              {isLogin ? 'Welcome back' : 'Join CleanSight'}
+            <CardTitle className="text-lg font-semibold text-gray-900">
+              {isLogin ? 'Welcome back' : 'Join Room Tidy AI'}
             </CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
               {isLogin 
