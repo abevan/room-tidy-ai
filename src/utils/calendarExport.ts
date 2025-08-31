@@ -99,13 +99,19 @@ END:VEVENT
       const uid = `task-${Date.now()}-${taskIndex}@roomtidy.ai`;
       const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
       
+      // Generate contextual subtasks based on the task
+      const subtasks = generateSubtasks(task);
+      const subtaskList = subtasks.map((subtask, index) => 
+        `${index + 1}. ${subtask} (${Math.ceil(task.timeEstimate / subtasks.length)} min)`
+      ).join('\\n');
+
       icsContent += `BEGIN:VEVENT
 UID:${uid}
 DTSTAMP:${timestamp}
 DTSTART:${formatDateForICS(startTime)}
 DTEND:${formatDateForICS(endTime)}
 SUMMARY:${getCategoryEmoji(task.category)} ${escapeICSText(task.description)}
-DESCRIPTION:🏷️ Category: ${task.category}\\n⏱️ Estimated time: ${task.timeEstimate} minutes\\n\\n🎯 Action Plan:\\n• Break this down into smaller steps\\n• Focus on one section at a time\\n• Use the "progress over perfection" mindset\\n• Take photos of your progress for motivation\\n\\n🌟 Remember: Each completed task brings you closer to your ideal space!
+DESCRIPTION:📋 Task: ${escapeICSText(task.description)}\\n⏱️ Estimated Time: ${task.timeEstimate} minutes\\n📂 Category: ${getCategoryEmoji(task.category)} ${task.category}\\n\\n🔧 Subtasks:\\n${subtaskList}\\n\\n💡 Tips:\\n• Work methodically through each subtask\\n• Clear surfaces before deep cleaning\\n• Put items back in their designated places
 LOCATION:Your Room - ${task.category} Area
 CATEGORIES:${task.category},Room Cleaning,AI Generated,Main Task
 STATUS:CONFIRMED
@@ -166,6 +172,69 @@ END:VEVENT
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
+
+// Helper function to generate contextual subtasks based on task description
+function generateSubtasks(task: Task): string[] {
+  const description = task.description.toLowerCase();
+  
+  // Generate contextual subtasks based on the task description
+  if (description.includes('laundry') || description.includes('clothes')) {
+    return [
+      'Sort clothes by color and fabric type',
+      'Load washing machine with appropriate detergent',
+      'Start wash cycle',
+      'Transfer to dryer when done',
+      'Fold and put away clean clothes'
+    ];
+  } else if (description.includes('dishes') || description.includes('wash')) {
+    return [
+      'Clear and rinse all dishes',
+      'Load dishwasher or wash by hand',
+      'Clean countertops and sink',
+      'Put clean dishes away',
+      'Wipe down appliances'
+    ];
+  } else if (description.includes('bed') || description.includes('sheets')) {
+    return [
+      'Strip old bedding',
+      'Put sheets in laundry',
+      'Make bed with fresh linens',
+      'Arrange pillows and blankets',
+      'Tidy nightstand area'
+    ];
+  } else if (description.includes('trash') || description.includes('garbage')) {
+    return [
+      'Empty all wastebaskets',
+      'Replace trash bag liners',
+      'Take trash to collection area',
+      'Wipe down trash cans if needed',
+      'Check for recyclables'
+    ];
+  } else if (description.includes('vacuum') || description.includes('floor')) {
+    return [
+      'Pick up items from floor',
+      'Move lightweight furniture',
+      'Vacuum thoroughly',
+      'Clean under furniture',
+      'Replace furniture and items'
+    ];
+  } else if (description.includes('organize') || description.includes('clutter')) {
+    return [
+      'Sort items into keep, donate, trash',
+      'Put kept items in designated places',
+      'Clear surfaces completely',
+      'Wipe down clean surfaces',
+      'Arrange remaining items neatly'
+    ];
+  } else {
+    // Generic subtasks based on task time estimate
+    return [
+      'Clear and prepare the area',
+      'Complete the main cleaning task',
+      'Organize and finalize the space'
+    ];
+  }
+}
 
 // Helper function to get category emoji
 function getCategoryEmoji(category: string): string {

@@ -65,11 +65,10 @@ export const TodoList: React.FC<TodoListProps> = ({
     if (!showAudioControls) {
       setShowAudioControls(true);
       setCurrentStep(0);
+      setAudioLoading(true);
+      await playAllSteps();
+      setAudioLoading(false);
     }
-    
-    setAudioLoading(true);
-    await playAllSteps();
-    setAudioLoading(false);
   };
 
   const playAllSteps = async () => {

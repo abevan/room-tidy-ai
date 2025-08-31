@@ -67,19 +67,21 @@ async function generateTaskList(items: DetectedItem[]) {
 
   const prompt = `Based on these detected items: ${JSON.stringify(items)}
 
-Create a categorized to-do list for cleaning and organizing this room. Group similar tasks together and provide realistic time estimates.
+Analyze the context and create specific, actionable cleaning tasks. Be contextual - if you see clothes in a laundry basket, suggest "Do dirty laundry" not just "organize clothes". If there are dishes by a sink, say "Wash dishes" not "clean kitchen items". 
+
+Create tasks in logical order for maximum efficiency - start with tasks that clear space, then deep cleaning, then organizing.
 
 Return a JSON array of tasks with this structure:
 {
   "id": "unique_id",
   "category": "Kitchen/Bathroom/Living Room/Bedroom/General",
-  "description": "Clear and specific task description",
+  "description": "Specific, contextual task description based on what you actually see",
   "estimatedTime": minutes_as_number,
   "priority": "high/medium/low",
   "completed": false
 }
 
-Prioritize tasks by hygiene and safety first, then organization. Only return valid JSON, no other text.`
+Order tasks logically: decluttering first, then cleaning surfaces, then organizing. Be specific about actions based on the detected items. Only return valid JSON, no other text.`
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {

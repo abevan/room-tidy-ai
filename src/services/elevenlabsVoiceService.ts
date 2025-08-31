@@ -14,18 +14,18 @@ export const generateCleaningMotivation = (tasks: Task[], totalTime: number): st
   
   let categoryText = "";
   if (categories.length === 1) {
-    categoryText = `some ${categories[0].toLowerCase()} items`;
+    categoryText = `${categories[0].toLowerCase()} area`;
   } else if (categories.length === 2) {
-    categoryText = `some ${categories[0].toLowerCase()} and ${categories[1].toLowerCase()} items`;
+    categoryText = `${categories[0].toLowerCase()} and ${categories[1].toLowerCase()} areas`;
   } else {
-    categoryText = `items in ${categories.length} different categories`;
+    categoryText = `${categories.length} different areas`;
   }
 
   const timeText = totalTime < 60 
-    ? `about ${totalTime} minutes`
-    : `around ${Math.round(totalTime / 60)} hour${Math.round(totalTime / 60) > 1 ? 's' : ''}`;
+    ? `${totalTime} minutes`
+    : `${Math.round(totalTime / 60)} hour${Math.round(totalTime / 60) > 1 ? 's' : ''}`;
 
-  return `Hey there! I've analyzed your space and found ${categoryText} that could use some attention. If we tackle these ${itemCount} tasks together, it should take ${timeText}. The great news is that we can make a huge visual impact pretty quickly! Ready to transform your space? Let's start with the most impactful tasks first!`;
+  return `I've identified ${itemCount} specific tasks to clean up your ${categoryText}. Based on what I can see, this should take around ${timeText} total. Let's work through these systematically to get the best results.`;
 };
 
 export const generateStepByStepGuidance = (tasks: Task[]): string[] => {
@@ -40,27 +40,27 @@ export const generateStepByStepGuidance = (tasks: Task[]): string[] => {
     const stepNumber = index + 1;
     const isLast = index === tasks.length - 1;
     
-    let message = `Step ${stepNumber}: Let's ${task.description.toLowerCase()}. `;
+    let message = `Step ${stepNumber}: ${task.description}. `;
     
     if (task.timeEstimate <= 5) {
-      message += "This should be quick - just a few minutes! ";
+      message += "This is a quick task that will make an immediate difference. ";
     } else if (task.timeEstimate <= 10) {
-      message += "This will take about 10 minutes, but you've got this! ";
+      message += "Take your time with this one - it's worth doing thoroughly. ";
     } else {
-      message += `This might take around ${task.timeEstimate} minutes, but take your time. `;
+      message += `This is the longer task, estimated at ${task.timeEstimate} minutes. Break it into smaller sections if needed. `;
     }
     
-    message += "Focus on one area at a time, and remember - progress over perfection!";
+    message += "Work systematically and you'll see great results.";
     
     if (isLast) {
-      message += " You're almost done - this is the final step!";
+      message += " This is your final task - you're almost there!";
     }
     
     guidance.push(message);
   });
   
   // Completion message
-  guidance.push("Congratulations! You've completed your cleaning plan. Your space looks amazing and you should feel proud of what you've accomplished!");
+  guidance.push("Excellent work! You've completed all the tasks. Your space is now organized and clean - that's a real accomplishment.");
   
   return guidance;
 };
