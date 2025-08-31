@@ -86,14 +86,12 @@ const config = {
         medium: "var(--shadow-medium)",
         strong: "var(--shadow-strong)",
         glow: "var(--shadow-glow)",
-        inner: "var(--shadow-inner)",
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
         'gradient-hero': 'var(--gradient-hero)',
         'gradient-card': 'var(--gradient-card)',
-        'gradient-mesh': 'var(--gradient-mesh)',
-        'gradient-glow': 'var(--gradient-glow)',
+        'gradient-subtle': 'var(--gradient-subtle)',
       },
       keyframes: {
         "accordion-down": {
@@ -114,16 +112,6 @@ const config = {
             transform: "translateY(0)"
           }
         },
-        "fade-up": {
-          "0%": {
-            opacity: "0",
-            transform: "translateY(30px)"
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translateY(0)"
-          }
-        },
         "scale-in": {
           "0%": {
             transform: "scale(0.95)",
@@ -134,50 +122,15 @@ const config = {
             opacity: "1"
           }
         },
-        "float": {
-          "0%, 100%": { 
-            transform: "translateY(0px) rotate(0deg)" 
-          },
-          "50%": { 
-            transform: "translateY(-20px) rotate(1deg)" 
-          }
-        },
-        "drift": {
-          "0%, 100%": { 
-            transform: "translateX(0px) translateY(0px)" 
-          },
-          "33%": { 
-            transform: "translateX(10px) translateY(-10px)" 
-          },
-          "66%": { 
-            transform: "translateX(-10px) translateY(10px)" 
-          }
-        },
-        "pulse-glow": {
-          "0%, 100%": { 
-            opacity: "0.4",
-            boxShadow: "0 0 20px hsl(var(--primary) / 0.4)"
-          },
-          "50%": { 
-            opacity: "1",
-            boxShadow: "0 0 40px hsl(var(--primary) / 0.8)"
-          }
-        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.3s ease-out",
-        "fade-up": "fade-up 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-        "scale-in": "scale-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        "float": "float 6s ease-in-out infinite",
-        "drift": "drift 8s ease-in-out infinite",
-        "pulse-glow": "pulse-glow 4s ease-in-out infinite",
+        "scale-in": "scale-in 0.2s ease-out",
       },
       transitionTimingFunction: {
         'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
-        'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-        'bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
       },
     },
   },

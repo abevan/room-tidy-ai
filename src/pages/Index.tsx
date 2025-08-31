@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { AppleStyleHero } from '@/components/AppleStyleHero';
+import { ModernHero } from '@/components/ModernHero';
 import { VideoUpload } from '@/components/VideoUpload';
 import { ProcessingState } from '@/components/ProcessingState';
 import { DetectionReview } from '@/components/DetectionReview';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, LogOut, User } from 'lucide-react';
 import { analyzeVideoWithGemini } from '@/services/googleVision';
 import { generateTodoList, breakdownTask } from '@/services/geminiApi';
-import { InteractiveBackground } from '@/components/InteractiveBackground';
+import { FloatingBackground } from '@/components/FloatingBackground';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -204,32 +204,28 @@ const Index = () => {
   }
 
   const renderHeader = () => (
-    <header className="absolute top-0 left-0 right-0 z-30 backdrop-blur-md bg-background/10 border-b border-border/20">
-      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-semibold bg-gradient-primary bg-clip-text text-transparent">
-          Room Cleanup AI
-        </h1>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-card/50 px-3 py-1.5 rounded-full backdrop-blur-sm">
-            <User className="h-4 w-4" />
-            <span>{user.email}</span>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleSignOut} className="bg-card/50 backdrop-blur-sm">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign out
-          </Button>
+    <header className="relative z-20 container mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 className="text-xl font-semibold">Room Cleanup AI</h1>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <User className="h-4 w-4" />
+          <span>{user.email}</span>
         </div>
+        <Button variant="outline" size="sm" onClick={handleSignOut}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign out
+        </Button>
       </div>
     </header>
   );
 
   return (
     <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
-      <InteractiveBackground />
+      <FloatingBackground />
       {renderHeader()}
       
       {appState === 'hero' && (
-        <AppleStyleHero onGetStarted={handleGetStarted} />
+        <ModernHero onGetStarted={handleGetStarted} />
       )}
 
       {appState !== 'hero' && (
