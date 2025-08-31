@@ -7,7 +7,7 @@ import { DetectionReview } from '@/components/DetectionReview';
 import { TodoList } from '@/components/TodoList';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { analyzeVideoWithVision } from '@/services/googleVision';
+import { analyzeVideoWithGemini } from '@/services/googleVision';
 import { generateTodoList, breakdownTask } from '@/services/geminiApi';
 import { useToast } from '@/hooks/use-toast';
 
@@ -148,7 +148,7 @@ const Index = () => {
       setProcessingStep(2);
       setProcessingProgress(50);
       
-      const detected = await analyzeVideoWithVision(selectedFile, apiKey);
+      const detected = await analyzeVideoWithGemini(selectedFile, apiKey);
       setDetectedItems(detected);
       
       setProcessingStep(3);
