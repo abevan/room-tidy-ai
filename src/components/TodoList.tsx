@@ -7,7 +7,7 @@ import { CheckCircle2, Clock, ChevronDown, ChevronRight, Play } from 'lucide-rea
 import { cn } from '@/lib/utils';
 import { AIMascot } from '@/components/AIMascot';
 import { AudioControls } from '@/components/AudioControls';
-import { generateStepByStepGuidance, speakText, stopSpeaking, pauseSpeaking, resumeSpeaking } from '@/services/elevenlabsVoiceService';
+import { generateStepByStepGuidance, speakText, stopSpeaking, pauseSpeaking, resumeSpeaking } from '@/services/voiceService';
 import { exportToCalendar } from '@/utils/calendarExport';
 import { Download } from 'lucide-react';
 
