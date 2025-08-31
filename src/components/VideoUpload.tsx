@@ -35,6 +35,13 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
 
   const validateVideoDuration = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
+      // Skip validation for recorded videos from camera
+      if (file.name.includes('room-video-') && file.type === 'video/webm') {
+        console.log('Skipping duration validation for camera-recorded video');
+        resolve(true);
+        return;
+      }
+      
       const video = document.createElement('video');
       video.preload = 'metadata';
       
@@ -44,8 +51,8 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
         
         console.log('Video duration validation:', duration, 'seconds, max allowed:', MAX_DURATION);
         
-        // Add a small buffer to account for encoding differences
-        if (duration > MAX_DURATION + 2) {
+        // Be more lenient with validation - allow up to 65 seconds
+        if (duration > MAX_DURATION + 5) {
           toast({
             title: "Video Too Long",
             description: `Please select a video shorter than ${MAX_DURATION} seconds (1 minute). Current duration: ${Math.round(duration)} seconds.`,
@@ -58,7 +65,7 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
       };
       
       video.onerror = () => {
-        console.error('Error loading video for duration check');
+        console.error('Error loading video for duration check - allowing video');
         // If we can't check duration, allow the video
         resolve(true);
       };

@@ -76,10 +76,13 @@ export const speakText = async (text: string, voiceId: string = '9BWtsMINqrJLrRa
         currentAudio = null;
       }
 
-      const response = await fetch('/api/text-to-speech', {
+      console.log('Calling ElevenLabs TTS with text:', text.substring(0, 50) + '...');
+      
+      const response = await fetch('https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/text-to-speech', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM`
         },
         body: JSON.stringify({
           text,
@@ -88,28 +91,36 @@ export const speakText = async (text: string, voiceId: string = '9BWtsMINqrJLrRa
         }),
       });
 
+      console.log('TTS response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('TTS error:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       
+      console.log('Audio blob created, playing...');
       currentAudio = new Audio(audioUrl);
       
       currentAudio.onended = () => {
+        console.log('Audio playback ended');
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
         resolve();
       };
       
       currentAudio.onerror = (error) => {
+        console.error('Audio playback error:', error);
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
         reject(error);
       };
       
       await currentAudio.play();
+      console.log('Audio playback started');
     } catch (error) {
       console.error('ElevenLabs TTS error:', error);
       reject(error);

@@ -88,14 +88,19 @@ export const exportToCalendar = (tasks: Task[]): void => {
   });
 
   // Create the calendar file
-  const calendar = events.map(event => {
+  const allEventsValue = events.map(event => {
     const { error, value } = createEvent(event);
     if (error) {
       console.error('Error creating event:', error);
       return null;
     }
     return value;
-  }).filter(Boolean).join('\n');
+  }).filter(Boolean);
+
+  console.log(`Creating calendar with ${allEventsValue.length} events from ${tasks.length} tasks`);
+
+  // Join all events into one calendar
+  const calendar = allEventsValue.join('');
 
   // Download the file
   const blob = new Blob([calendar], { type: 'text/calendar' });
