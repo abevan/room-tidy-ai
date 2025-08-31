@@ -7,7 +7,9 @@ import { CheckCircle2, Clock, Sparkles, ChevronDown, ChevronRight, Play } from '
 import { cn } from '@/lib/utils';
 import { AIMascot } from '@/components/AIMascot';
 import { AudioControls } from '@/components/AudioControls';
-import { generateStepByStepGuidance, speakText, stopSpeaking, pauseSpeaking, resumeSpeaking } from '@/services/voiceService';
+import { generateStepByStepGuidance, speakText, stopSpeaking, pauseSpeaking, resumeSpeaking } from '@/services/elevenlabsVoiceService';
+import { exportToCalendar } from '@/utils/calendarExport';
+import { Download } from 'lucide-react';
 
 interface SubTask {
   id: string;
@@ -163,26 +165,30 @@ export const TodoList: React.FC<TodoListProps> = ({
       </Card>
 
       {/* AI Mascot & Audio Controls */}
-      <Card className="p-6 bg-gradient-card border-0 shadow-medium">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="relative">
-            <AIMascot />
-            <Button
-              variant="ghost" 
-              size="icon"
-              onClick={handlePlayGuidance}
-              className="absolute inset-0 w-full h-full rounded-full bg-primary/10 hover:bg-primary/20 transition-all duration-300 backdrop-blur-sm"
-            >
-              <Play className="w-6 h-6 text-primary" />
-            </Button>
-          </div>
+      <Card className="p-8 bg-gradient-card border-0 shadow-medium">
+        <div className="flex flex-col items-center space-y-6">
+          <AIMascot 
+            onClick={handlePlayGuidance}
+            showPlayButton={!showAudioControls}
+            isPlaying={isPlaying}
+          />
           
           <div className="text-center">
-            <h3 className="font-semibold mb-1">AI Cleaning Coach</h3>
-            <p className="text-sm text-muted-foreground">
-              Click to get step-by-step guidance through your cleaning tasks
+            <h3 className="text-xl font-bold mb-2">🎯 AI Cleaning Coach</h3>
+            <p className="text-base text-muted-foreground">
+              Click the mascot to get step-by-step guidance through your cleaning tasks!
             </p>
           </div>
+          
+          {/* Calendar Export Button */}
+          <Button
+            variant="outline"
+            onClick={() => exportToCalendar(tasks)}
+            className="flex items-center gap-2 text-base px-6 py-3"
+          >
+            <Download className="w-5 h-5" />
+            Export to Calendar
+          </Button>
           
           {showAudioControls && (
             <div className="w-full max-w-md">

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { analyzeVideoWithGemini } from '@/services/googleVision';
 import { generateTodoList, breakdownTask } from '@/services/geminiApi';
-import { generateCleaningMotivation, speakText, stopSpeaking } from '@/services/voiceService';
+import { FloatingBackground } from '@/components/FloatingBackground';
 import { useToast } from '@/hooks/use-toast';
 
 // Mock data for demonstration - Updated to match API types
@@ -189,19 +189,8 @@ const Index = () => {
       setTasks(generatedTasks);
       setProcessingProgress(100);
       
-      setTimeout(async () => {
+      setTimeout(() => {
         setAppState('results');
-        
-        // Generate and speak motivational message
-        try {
-          const motivationText = generateCleaningMotivation(generatedTasks, generatedTasks.reduce((sum, task) => sum + task.timeEstimate, 0));
-          setIsPlaying(true);
-          await speakText(motivationText);
-          setIsPlaying(false);
-        } catch (error) {
-          console.log('Voice synthesis not available or failed');
-          setIsPlaying(false);
-        }
       }, 1000);
       
     } catch (error) {
@@ -261,28 +250,30 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero relative">
+    <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
+      <FloatingBackground />
+      
       {appState === 'hero' && (
         <ModernHero onGetStarted={handleGetStarted} />
       )}
 
       {appState !== 'hero' && (
-        <div className="relative z-10 container mx-auto px-4 py-8">
+        <div className="relative z-10 container mx-auto px-4 py-4 max-w-5xl">
           {appState === 'upload' && (
             <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <Button 
                   variant="ghost" 
                   onClick={handleStartOver}
-                  className="mb-4"
+                  className="mb-4 text-lg px-6 py-3"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <ArrowLeft className="w-5 h-5 mr-2" />
                   Back to Home
                 </Button>
-                <h1 className="text-3xl font-bold mb-4">Upload Your Room Video</h1>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
+                <h1 className="text-4xl font-bold mb-4 text-primary">📹 Upload Your Room Video</h1>
+                <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
                   Record a short video of your room (30-60 seconds) showing the areas that need cleaning. 
-                  Our AI will analyze it and create a personalized cleanup plan.
+                  Our AI will analyze it and create a personalized cleanup plan!
                 </p>
               </div>
               <VideoUpload 
@@ -294,13 +285,13 @@ const Index = () => {
 
           {(appState === 'processing' || appState === 'generating') && (
             <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <Button 
                   variant="ghost" 
                   onClick={handleBackToUpload}
-                  className="mb-4"
+                  className="mb-4 text-lg px-6 py-3"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <ArrowLeft className="w-5 h-5 mr-2" />
                   Back to Upload
                 </Button>
               </div>
@@ -314,13 +305,13 @@ const Index = () => {
 
           {appState === 'detection' && (
             <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <Button 
                   variant="ghost" 
                   onClick={handleBackToUpload}
-                  className="mb-4"
+                  className="mb-4 text-lg px-6 py-3"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <ArrowLeft className="w-5 h-5 mr-2" />
                   Back to Upload
                 </Button>
               </div>
@@ -333,14 +324,14 @@ const Index = () => {
           )}
 
           {appState === 'results' && (
-            <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-8">
+            <div className="max-w-5xl mx-auto">
+              <div className="text-center mb-6">
                 <Button 
                   variant="ghost" 
                   onClick={handleStartOver}
-                  className="mb-4"
+                  className="mb-4 text-lg px-6 py-3"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <ArrowLeft className="w-5 h-5 mr-2" />
                   Start Over
                 </Button>
               </div>
