@@ -87,12 +87,20 @@ export const analyzeImageWithGemini = async (imageBlob: Blob): Promise<DetectedO
       reader.readAsDataURL(imageBlob);
     });
 
+    console.log('Calling Edge Function for image analysis...');
+    
     // Call secure Edge Function
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-image`, {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    console.log('Supabase URL:', supabaseUrl ? 'Set' : 'Missing');
+    console.log('Supabase Key:', supabaseKey ? 'Set' : 'Missing');
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/analyze-image`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer ${supabaseKey}`
       },
       body: JSON.stringify({
         imageData: base64Data,
@@ -101,10 +109,15 @@ export const analyzeImageWithGemini = async (imageBlob: Blob): Promise<DetectedO
     });
 
     if (!response.ok) {
-      throw new Error(`Analysis failed: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Edge Function error:', response.status, errorText);
+      throw new Error(`Analysis failed: ${response.status} - ${errorText}`);
     }
 
-    const { detectedObjects } = await response.json();
+    const responseData = await response.json();
+    console.log('Edge Function response:', responseData);
+    
+    const { detectedObjects } = responseData;
 
     // Validate and format the response
     return detectedObjects.map((obj: any, index: number) => ({
