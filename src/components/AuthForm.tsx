@@ -137,10 +137,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
               
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-muted-foreground/20"></div>
+                  <div className="w-full border-t border-border"></div>
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">or</span>
+                  <span className="bg-card px-3 text-muted-foreground font-medium">or</span>
                 </div>
               </div>
               

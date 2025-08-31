@@ -15,10 +15,10 @@
     --popover-foreground: 240 10% 9%;
     
     /* Primary - Modern blue */
-    --primary: 220 91% 51%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 220 84% 46%;
-    --primary-glow: 220 91% 51%;
+    --primary-hover: 217 84% 55%;
+    --primary-glow: 217 91% 60%;
     
     /* Secondary - Subtle grays */
     --secondary: 240 6% 97%;
@@ -45,8 +45,8 @@
     --radius: 0.75rem;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(220, 91%, 51%), hsl(220, 84%, 46%));
-    --gradient-hero: linear-gradient(135deg, hsl(220, 91%, 51%) 0%, hsl(240, 100%, 96%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 60%), hsl(217, 84%, 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(240, 100%, 98%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(240, 5%, 98%) 100%);
     --gradient-subtle: linear-gradient(180deg, hsl(240, 5%, 98%) 0%, hsl(240, 6%, 96%) 100%);
     
