@@ -101,23 +101,34 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
 
   const startCamera = async () => {
     try {
+      console.log('Requesting camera access...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' }, 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }, 
         audio: true 
       });
+      
+      console.log('Camera access granted, setting up stream...');
       setStream(mediaStream);
       setShowCameraPreview(true);
       
-      // Set video source for preview
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
+      // Set video source for preview after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        if (videoRef.current && mediaStream) {
+          console.log('Setting video source...');
+          videoRef.current.srcObject = mediaStream;
+          videoRef.current.play().catch(e => console.error('Video play error:', e));
+        }
+      }, 100);
       
     } catch (error) {
       console.error('Camera access error:', error);
       toast({
         title: "Camera Access Failed",
-        description: "Please allow camera access or upload a video file instead.",
+        description: "Please allow camera access and ensure your camera is not being used by another application.",
         variant: "destructive",
       });
     }
@@ -210,14 +221,23 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
             </div>
             
             {/* Camera Preview */}
-            <div className="relative">
+            <div className="relative bg-black rounded-lg overflow-hidden">
               <video
                 ref={videoRef}
                 autoPlay
                 muted
                 playsInline
-                className="w-full h-64 bg-black rounded-lg object-cover"
+                className="w-full h-64 object-cover"
+                style={{ transform: 'scaleX(-1)' }} // Mirror effect like phone cameras
               />
+              {!stream && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+                  <div className="text-white text-center">
+                    <Camera className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm opacity-75">Starting camera...</p>
+                  </div>
+                </div>
+              )}
               {isRecording && (
                 <div className="absolute top-4 left-4 flex items-center gap-2 bg-destructive/90 text-white px-3 py-1 rounded-full">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
