@@ -107,36 +107,12 @@ export const analyzeImageWithGemini = async (imageBlob: Blob): Promise<DetectedO
       supabaseKey: supabaseKey ? 'Set' : 'Missing'
     });
     
-    // Fallback for development - use mock data if Supabase not configured
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('Supabase not configured, using mock analysis data');
-      return [
-        {
-          id: 'mock_1',
-          name: 'Organize items on desk',
-          confidence: 0.85,
-          location: 'desk area'
-        },
-        {
-          id: 'mock_2', 
-          name: 'Put clothes away',
-          confidence: 0.78,
-          location: 'near bed'
-        },
-        {
-          id: 'mock_3',
-          name: 'Clear floor space',
-          confidence: 0.72,
-          location: 'floor'
-        }
-      ];
-    }
     
-    const response = await fetch(`${supabaseUrl}/functions/v1/analyze-image`, {
+    const response = await fetch(`https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/analyze-image`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM`
       },
       body: JSON.stringify({
         imageData: base64Data,

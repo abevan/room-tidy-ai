@@ -28,12 +28,12 @@ export const generateTodoList = async (items: DetectedItem[]): Promise<Task[]> =
       throw new Error('Invalid items data');
     }
 
-    // Call secure Edge Function
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-tasks`, {
+    // Call secure Edge Function using the Supabase client
+    const response = await fetch(`https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/generate-tasks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM`
       },
       body: JSON.stringify({
         action: 'generateTasks',
@@ -73,12 +73,12 @@ export const breakdownTask = async (taskDescription: string): Promise<Subtask[]>
     // Sanitize input
     const sanitizedDescription = taskDescription.trim().slice(0, 500);
 
-    // Call secure Edge Function
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-tasks`, {
+    // Call secure Edge Function using the Supabase client
+    const response = await fetch(`https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/generate-tasks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM`
       },
       body: JSON.stringify({
         action: 'breakdownTask',

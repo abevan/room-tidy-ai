@@ -11,64 +11,6 @@ import { generateTodoList, breakdownTask } from '@/services/geminiApi';
 import { FloatingBackground } from '@/components/FloatingBackground';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock data for demonstration - Updated to match API types
-const mockTasks = [
-  {
-    id: '1',
-    description: 'Make the bed and arrange pillows',
-    timeEstimate: 5,
-    completed: false,
-    category: 'General',
-  },
-  {
-    id: '2', 
-    description: 'Put away clothes scattered on chair',
-    timeEstimate: 8,
-    completed: false,
-    category: 'Clothing',
-    subtasks: [
-      {
-        id: '2a',
-        description: 'Separate clean from dirty clothes',
-        timeEstimate: 2,
-        completed: false,
-      },
-      {
-        id: '2b',
-        description: 'Fold clean clothes',
-        timeEstimate: 4,
-        completed: false,
-      },
-      {
-        id: '2c',
-        description: 'Put folded clothes in closet',
-        timeEstimate: 2,
-        completed: false,
-      }
-    ]
-  },
-  {
-    id: '3',
-    description: 'Clear and wipe down desk surface',
-    timeEstimate: 10,
-    completed: false,
-    category: 'Surface',
-  },
-  {
-    id: '4',
-    description: 'Organize books and put them on shelf',
-    timeEstimate: 12,
-    completed: false,
-    category: 'Items',
-  },
-  {
-    id: '5',
-    description: 'Vacuum floor and remove clutter',
-    timeEstimate: 15,
-    completed: false,
-    category: 'General',
-  },
-];
 
 interface DetectedItem {
   id: string;
@@ -102,7 +44,7 @@ const Index = () => {
   const [processingStep, setProcessingStep] = useState(1);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [detectedItems, setDetectedItems] = useState<DetectedItem[]>([]);
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
 
