@@ -14,18 +14,18 @@ export const generateCleaningMotivation = (tasks: Task[], totalTime: number): st
   
   let categoryText = "";
   if (categories.length === 1) {
-    categoryText = `some ${categories[0].toLowerCase()} items`;
+    categoryText = `${categories[0].toLowerCase()} area`;
   } else if (categories.length === 2) {
-    categoryText = `some ${categories[0].toLowerCase()} and ${categories[1].toLowerCase()} items`;
+    categoryText = `${categories[0].toLowerCase()} and ${categories[1].toLowerCase()} areas`;
   } else {
-    categoryText = `items in ${categories.length} different categories`;
+    categoryText = `${categories.length} different areas`;
   }
 
   const timeText = totalTime < 60 
-    ? `about ${totalTime} minutes`
-    : `around ${Math.round(totalTime / 60)} hour${Math.round(totalTime / 60) > 1 ? 's' : ''}`;
+    ? `${totalTime} minutes`
+    : `${Math.round(totalTime / 60)} hour${Math.round(totalTime / 60) > 1 ? 's' : ''}`;
 
-  return `Hey there! I've analyzed your space and found ${categoryText} that could use some attention. If we tackle these ${itemCount} tasks together, it should take ${timeText}. The great news is that we can make a huge visual impact pretty quickly! Ready to transform your space? Let's start with the most impactful tasks first!`;
+  return `I've identified ${itemCount} specific tasks to clean up your ${categoryText}. Based on what I can see, this should take around ${timeText} total. Let's work through these systematically to get the best results.`;
 };
 
 export const generateStepByStepGuidance = (tasks: Task[]): string[] => {
@@ -40,27 +40,27 @@ export const generateStepByStepGuidance = (tasks: Task[]): string[] => {
     const stepNumber = index + 1;
     const isLast = index === tasks.length - 1;
     
-    let message = `Step ${stepNumber}: Let's ${task.description.toLowerCase()}. `;
+    let message = `Step ${stepNumber}: ${task.description}. `;
     
     if (task.timeEstimate <= 5) {
-      message += "This should be quick - just a few minutes! ";
+      message += "This is a quick task that will make an immediate difference. ";
     } else if (task.timeEstimate <= 10) {
-      message += "This will take about 10 minutes, but you've got this! ";
+      message += "Take your time with this one - it's worth doing thoroughly. ";
     } else {
-      message += `This might take around ${task.timeEstimate} minutes, but take your time. `;
+      message += `This is the longer task, estimated at ${task.timeEstimate} minutes. Break it into smaller sections if needed. `;
     }
     
-    message += "Focus on one area at a time, and remember - progress over perfection!";
+    message += "Work systematically and you'll see great results.";
     
     if (isLast) {
-      message += " You're almost done - this is the final step!";
+      message += " This is your final task - you're almost there!";
     }
     
     guidance.push(message);
   });
   
   // Completion message
-  guidance.push("Congratulations! You've completed your cleaning plan. Your space looks amazing and you should feel proud of what you've accomplished!");
+  guidance.push("Excellent work! You've completed all the tasks. Your space is now organized and clean - that's a real accomplishment.");
   
   return guidance;
 };
@@ -76,42 +76,78 @@ export const speakText = async (text: string, voiceId: string = '9BWtsMINqrJLrRa
         currentAudio = null;
       }
 
-      const response = await fetch('/api/text-to-speech', {
+      console.log('🎵 Starting TTS request for text:', text.substring(0, 50) + '...');
+      
+      const response = await fetch('https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/text-to-speech', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM`
         },
         body: JSON.stringify({
-          text,
+          text: text.substring(0, 500), // Limit text length
           voice_id: voiceId,
           model_id: 'eleven_multilingual_v2'
         }),
       });
 
+      console.log('🎵 TTS response status:', response.status);
+      console.log('🎵 Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('🎵 TTS API Error:', response.status, errorText);
+        throw new Error(`TTS failed: ${response.status} - ${errorText}`);
+      }
+
+      // The response should be audio/mpeg directly
+      const contentType = response.headers.get('content-type');
+      console.log('🎵 Content type:', contentType);
+      
+      if (contentType?.includes('application/json')) {
+        const errorData = await response.json();
+        console.error('🎵 TTS returned JSON error:', errorData);
+        throw new Error('TTS service returned error: ' + JSON.stringify(errorData));
+      }
+
+      if (!contentType?.includes('audio')) {
+        throw new Error('Invalid response type: expected audio, got ' + contentType);
       }
 
       const audioBlob = await response.blob();
+      console.log('🎵 Audio blob size:', audioBlob.size, 'type:', audioBlob.type);
+      
+      if (audioBlob.size === 0) {
+        throw new Error('Received empty audio response');
+      }
+      
       const audioUrl = URL.createObjectURL(audioBlob);
       
+      console.log('🎵 Creating audio element and playing...');
       currentAudio = new Audio(audioUrl);
       
+      currentAudio.onloadstart = () => console.log('🎵 Audio loading started');
+      currentAudio.oncanplay = () => console.log('🎵 Audio can play');
+      currentAudio.onplay = () => console.log('🎵 Audio playback started');
+      
       currentAudio.onended = () => {
+        console.log('🎵 Audio playback ended');
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
         resolve();
       };
       
       currentAudio.onerror = (error) => {
+        console.error('🎵 Audio playback error:', error);
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
-        reject(error);
+        reject(new Error('Audio playback failed'));
       };
       
       await currentAudio.play();
+      console.log('🎵 Audio play() called successfully');
     } catch (error) {
-      console.error('ElevenLabs TTS error:', error);
+      console.error('🎵 TTS Error:', error);
       reject(error);
     }
   });

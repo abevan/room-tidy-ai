@@ -60,14 +60,14 @@ export const DetectionReview: React.FC<DetectionReviewProps> = ({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Review Detected Items</h2>
+        <h2 className="text-2xl font-bold mb-2 text-foreground">Review Detected Items</h2>
         <p className="text-muted-foreground">
           Review and edit the items our AI detected in your room before generating the to-do list.
         </p>
       </div>
 
       {videoPreview && (
-        <Card className="p-4">
+        <Card className="p-4 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg">
           <div className="flex items-center gap-2 mb-3">
             <Eye className="w-4 h-4" />
             <span className="font-medium">Analyzed Video</span>
@@ -81,11 +81,11 @@ export const DetectionReview: React.FC<DetectionReviewProps> = ({
       )}
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Card className="p-6">
+        <Card className="p-6 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg">
           <h3 className="font-semibold mb-4">Detected Items ({items.length})</h3>
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {items.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 p-3 border rounded-lg">
+              <div key={item.id} className="flex items-center gap-3 p-3 border rounded-lg bg-white">
                 <div className="flex-1">
                   <Input
                     value={item.name}
@@ -118,7 +118,7 @@ export const DetectionReview: React.FC<DetectionReviewProps> = ({
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-6 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg">
           <h3 className="font-semibold mb-4">Add Items</h3>
           <div className="space-y-4">
             <div>
@@ -146,11 +146,11 @@ export const DetectionReview: React.FC<DetectionReviewProps> = ({
 
           <div className="mt-8 pt-6 border-t">
             <Button 
-              variant="hero" 
+              variant="default" 
               size="lg" 
               onClick={() => onItemsConfirmed(items)}
               disabled={items.length === 0}
-              className="w-full"
+              className="w-full bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90"
             >
               Generate To-Do List ({items.length} items)
             </Button>

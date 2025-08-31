@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Upload, Video, X, Camera } from 'lucide-react';
+import { Upload, Video, X, Camera, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,12 +17,36 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [recordedVideo, setRecordedVideo] = useState<File | null>(null);
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+
+  // Clean up camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    };
+  }, [stream]);
 
   const validateVideoDuration = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
+      // Skip validation for recorded videos from camera
+      if (file.name.includes('room-video-') && file.type === 'video/webm') {
+        console.log('Skipping duration validation for camera-recorded video');
+        resolve(true);
+        return;
+      }
+      
       const video = document.createElement('video');
       video.preload = 'metadata';
       
@@ -30,16 +54,25 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
         window.URL.revokeObjectURL(video.src);
         const duration = video.duration;
         
-        if (duration > MAX_DURATION) {
+        console.log('Video duration validation:', duration, 'seconds, max allowed:', MAX_DURATION);
+        
+        // Be more lenient with validation - allow up to 65 seconds
+        if (duration > MAX_DURATION + 5) {
           toast({
             title: "Video Too Long",
-            description: `Please select a video shorter than ${MAX_DURATION} seconds (1 minute).`,
+            description: `Please select a video shorter than ${MAX_DURATION} seconds (1 minute). Current duration: ${Math.round(duration)} seconds.`,
             variant: "destructive",
           });
           resolve(false);
         } else {
           resolve(true);
         }
+      };
+      
+      video.onerror = () => {
+        console.error('Error loading video for duration check - allowing video');
+        // If we can't check duration, allow the video
+        resolve(true);
       };
       
       video.src = URL.createObjectURL(file);
@@ -89,57 +122,126 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
 
   const startCamera = async () => {
     try {
+      console.log('Requesting camera access...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' }, 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }, 
         audio: true 
       });
+      
+      console.log('Camera access granted, setting up stream...');
       setStream(mediaStream);
-      setIsRecording(true);
+      setShowCameraPreview(true);
       
-      const recorder = new MediaRecorder(mediaStream);
-      const chunks: Blob[] = [];
-      
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-      
-      recorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        const file = new File([blob], `room-video-${Date.now()}.webm`, { type: 'video/webm' });
-        
-        await handleFileSelect(file);
-        setIsRecording(false);
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-          setStream(null);
-        }
-      };
-      
-      mediaRecorderRef.current = recorder;
-      recorder.start();
-      
+      // Set video source for preview after a short delay to ensure DOM is ready
       setTimeout(() => {
-        if (recorder.state === 'recording') {
-          recorder.stop();
+        if (videoRef.current && mediaStream) {
+          console.log('Setting video source...');
+          videoRef.current.srcObject = mediaStream;
+          videoRef.current.play().catch(e => console.error('Video play error:', e));
         }
-      }, MAX_DURATION * 1000);
+      }, 100);
       
     } catch (error) {
       console.error('Camera access error:', error);
       toast({
         title: "Camera Access Failed",
-        description: "Please allow camera access or upload a video file instead.",
+        description: "Please allow camera access and ensure your camera is not being used by another application.",
         variant: "destructive",
       });
     }
+  };
+
+  const startRecording = () => {
+    if (!stream) return;
+    
+    setIsRecording(true);
+    setRecordingTime(0);
+    
+    // Start recording timer
+    recordingIntervalRef.current = setInterval(() => {
+      setRecordingTime(prev => prev + 1);
+    }, 1000);
+    
+    const recorder = new MediaRecorder(stream);
+    const chunks: Blob[] = [];
+    
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+    
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const file = new File([blob], `room-video-${Date.now()}.webm`, { type: 'video/webm' });
+      setRecordedVideo(file);
+      setIsRecording(false);
+      
+      // Clear timer
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+    };
+    
+    mediaRecorderRef.current = recorder;
+    recorder.start();
+    
+    // Auto-stop after max duration
+    setTimeout(() => {
+      if (recorder.state === 'recording') {
+        recorder.stop();
+      }
+    }, MAX_DURATION * 1000);
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+  };
+
+  const confirmRecordedVideo = async () => {
+    if (recordedVideo) {
+      console.log('Confirming recorded video:', recordedVideo.name, recordedVideo.size, recordedVideo.type);
+      
+      setSelectedFile(recordedVideo);
+      const url = URL.createObjectURL(recordedVideo);
+      setVideoPreview(url);
+      onVideoSelect(recordedVideo);
+      
+      // Clean up camera
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+      }
+      setShowCameraPreview(false);
+      setRecordedVideo(null);
+    }
+  };
+
+  const retakeVideo = () => {
+    setRecordedVideo(null);
+    setIsRecording(false);
+    // Keep camera stream active for retake
+  };
+
+  const cancelCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCameraPreview(false);
+    setRecordedVideo(null);
+    setIsRecording(false);
   };
 
   const clearSelection = () => {
@@ -152,10 +254,80 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6">
-      {!selectedFile ? (
+      {showCameraPreview ? (
+        <Card className="p-6 bg-gradient-card shadow-medium">
+          <div className="space-y-4">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-2">📹 Camera Preview</h3>
+              <p className="text-muted-foreground">
+                Show your room clearly. Recording will be limited to 60 seconds.
+              </p>
+            </div>
+            
+            {/* Camera Preview */}
+            <div className="relative bg-black rounded-lg overflow-hidden">
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-64 object-cover"
+                
+              />
+              {!stream && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+                  <div className="text-white text-center">
+                    <Camera className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm opacity-75">Starting camera...</p>
+                  </div>
+                </div>
+              )}
+              {isRecording && (
+                <div className="absolute top-4 left-4 flex items-center gap-2 bg-destructive/90 text-white px-3 py-1 rounded-full">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                  <span className="text-sm font-medium">REC {recordingTime}s / 60s</span>
+                </div>
+              )}
+            </div>
+
+            {/* Camera Controls */}
+            <div className="flex justify-center gap-3">
+              {!isRecording && !recordedVideo && (
+                <>
+                  <Button variant="outline" onClick={cancelCamera}>
+                    Cancel
+                  </Button>
+                  <Button onClick={startRecording} className="bg-destructive hover:bg-destructive/90">
+                    <Camera className="w-4 h-4 mr-2" />
+                    Start Recording
+                  </Button>
+                </>
+              )}
+              
+              {isRecording && (
+                <Button variant="outline" onClick={stopRecording}>
+                  Stop Recording
+                </Button>
+              )}
+              
+              {recordedVideo && !isRecording && (
+                <>
+                  <Button variant="outline" onClick={retakeVideo}>
+                    Retake
+                  </Button>
+                  <Button onClick={confirmRecordedVideo} className="bg-success hover:bg-success/90">
+                    <Check className="w-4 h-4 mr-2" />
+                    Use This Video
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
+      ) : !selectedFile ? (
         <div className="space-y-6">
           {/* Camera Option */}
-          <Card className="p-8 text-center border-2 border-dashed border-primary/30 bg-gradient-card hover:shadow-medium transition-all">
+          <Card className="p-8 text-center border-2 border-dashed border-primary/30 bg-white/90 backdrop-blur-sm hover:shadow-lg transition-all">
             <Camera className="w-16 h-16 mx-auto mb-4 text-primary" />
             <h3 className="text-xl font-semibold mb-2">Record with Camera</h3>
             <p className="text-muted-foreground mb-6">
@@ -164,23 +336,10 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
             <Button 
               onClick={startCamera}
               size="lg"
-              className="shadow-medium hover:shadow-strong px-8 py-3"
-              disabled={isRecording}
+              className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-3 rounded-2xl"
             >
-              {isRecording ? 'Recording...' : 'Start Recording'}
+              Start Recording
             </Button>
-            
-            {isRecording && (
-              <div className="mt-6 space-y-3">
-                <div className="flex items-center justify-center gap-2 text-destructive">
-                  <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
-                  <span className="font-medium">Recording in progress</span>
-                </div>
-                <Button variant="outline" onClick={stopRecording} size="sm">
-                  Stop Recording
-                </Button>
-              </div>
-            )}
           </Card>
 
           {/* Divider */}
@@ -198,9 +357,9 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
           {/* Upload Option */}
           <Card
             className={cn(
-              "relative border-2 border-dashed transition-all duration-300 cursor-pointer hover:shadow-medium",
+              "relative border-2 border-dashed transition-all duration-300 cursor-pointer bg-white/90 backdrop-blur-sm hover:shadow-lg",
               dragOver
-                ? "border-primary bg-gradient-hero scale-105"
+                ? "border-primary bg-primary/5 scale-105"
                 : "border-border hover:border-primary/50"
             )}
             onDragOver={handleDragOver}
@@ -214,13 +373,13 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
                 onChange={handleFileInput}
                 className="hidden"
               />
-              <Upload className="w-12 h-12 mx-auto mb-4 text-primary opacity-80" />
+              <Upload className="w-12 h-12 mx-auto mb-4 text-primary" />
               <h3 className="text-lg font-semibold mb-2">Upload Video File</h3>
               <p className="text-muted-foreground mb-4">
                 Drag and drop your room video here, or click to browse
               </p>
               <p className="text-sm text-muted-foreground">
-                Supports MP4, MOV, AVI files (max 1 minute, up to 100MB)
+                Supports MP4, MOV, AVI files (0-60 seconds, up to 100MB)
               </p>
             </label>
           </Card>

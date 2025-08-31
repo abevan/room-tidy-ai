@@ -1,74 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { ModernHero } from '@/components/ModernHero';
 import { VideoUpload } from '@/components/VideoUpload';
 import { ProcessingState } from '@/components/ProcessingState';
 import { DetectionReview } from '@/components/DetectionReview';
 import { TodoList } from '@/components/TodoList';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LogOut, User } from 'lucide-react';
 import { analyzeVideoWithGemini } from '@/services/googleVision';
 import { generateTodoList, breakdownTask } from '@/services/geminiApi';
 import { FloatingBackground } from '@/components/FloatingBackground';
 import { useToast } from '@/hooks/use-toast';
+import { usePWA } from '@/hooks/usePWA';
 
-// Mock data for demonstration - Updated to match API types
-const mockTasks = [
-  {
-    id: '1',
-    description: 'Make the bed and arrange pillows',
-    timeEstimate: 5,
-    completed: false,
-    category: 'General',
-  },
-  {
-    id: '2', 
-    description: 'Put away clothes scattered on chair',
-    timeEstimate: 8,
-    completed: false,
-    category: 'Clothing',
-    subtasks: [
-      {
-        id: '2a',
-        description: 'Separate clean from dirty clothes',
-        timeEstimate: 2,
-        completed: false,
-      },
-      {
-        id: '2b',
-        description: 'Fold clean clothes',
-        timeEstimate: 4,
-        completed: false,
-      },
-      {
-        id: '2c',
-        description: 'Put folded clothes in closet',
-        timeEstimate: 2,
-        completed: false,
-      }
-    ]
-  },
-  {
-    id: '3',
-    description: 'Clear and wipe down desk surface',
-    timeEstimate: 10,
-    completed: false,
-    category: 'Surface',
-  },
-  {
-    id: '4',
-    description: 'Organize books and put them on shelf',
-    timeEstimate: 12,
-    completed: false,
-    category: 'Items',
-  },
-  {
-    id: '5',
-    description: 'Vacuum floor and remove clutter',
-    timeEstimate: 15,
-    completed: false,
-    category: 'General',
-  },
-];
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
+}
+
 
 interface DetectedItem {
   id: string;
@@ -96,17 +55,44 @@ interface Subtask {
 type AppState = 'hero' | 'upload' | 'processing' | 'detection' | 'generating' | 'results';
 
 const Index = () => {
+  const { user, signOut } = useAuth();
+  const { isInstallable } = usePWA();
+  const navigate = useNavigate();
   const [appState, setAppState] = useState<AppState>('hero');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState(1);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [detectedItems, setDetectedItems] = useState<DetectedItem[]>([]);
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const { toast } = useToast();
 
   const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
+
+  // Show install prompt after 5 seconds if app is installable
+  useEffect(() => {
+    if (isInstallable && !showInstallPrompt) {
+      console.log('🔧 PWA: App is installable, showing prompt in 5 seconds');
+      const timer = setTimeout(() => {
+        console.log('🔧 PWA: Showing install prompt now');
+        setShowInstallPrompt(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isInstallable, showInstallPrompt]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
 
   const handleGetStarted = () => {
     setAppState('upload');
@@ -121,16 +107,20 @@ const Index = () => {
   const handleProcessStart = async () => {
     if (!selectedFile) return;
 
+    console.log('Starting analysis process...');
     setAppState('processing');
     setProcessingStep(1);
     setProcessingProgress(25);
 
     try {
       // Step 1: Extract frames and analyze
+      console.log('Moving to step 2 - frame extraction');
       setProcessingStep(2);
       setProcessingProgress(50);
       
+      console.log('Calling analyzeVideoWithGemini with file:', selectedFile.name, selectedFile.size, selectedFile.type);
       const detected = await analyzeVideoWithGemini(selectedFile);
+      console.log('Analysis complete, detected items:', detected);
       setDetectedItems(detected);
       
       setProcessingStep(3);
@@ -148,7 +138,7 @@ const Index = () => {
       console.error('Processing error:', error);
       toast({
         title: "Processing Error",
-        description: "Failed to analyze video. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to analyze video. Please try again.",
         variant: "destructive",
       });
       setAppState('upload');
@@ -184,9 +174,24 @@ const Index = () => {
     setProcessingProgress(0);
 
     try {
-      setProcessingProgress(50);
+      setProcessingProgress(30);
       const generatedTasks = await generateTodoList(items);
-      setTasks(generatedTasks);
+      
+      setProcessingProgress(60);
+      // Auto-breakdown all tasks
+      const tasksWithSubtasks = await Promise.all(
+        generatedTasks.map(async (task) => {
+          try {
+            const subtasks = await breakdownTask(task.description);
+            return { ...task, subtasks };
+          } catch (error) {
+            console.error(`Failed to breakdown task: ${task.description}`, error);
+            return task; // Return original task if breakdown fails
+          }
+        })
+      );
+      
+      setTasks(tasksWithSubtasks);
       setProcessingProgress(100);
       
       setTimeout(() => {
@@ -201,32 +206,6 @@ const Index = () => {
         variant: "destructive",
       });
       setAppState('detection');
-    }
-  };
-
-  const handleTaskBreakdown = async (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task || task.subtasks) return;
-
-    try {
-      const subtasks = await breakdownTask(task.description);
-      setTasks(prev => prev.map(t => 
-        t.id === taskId 
-          ? { ...t, subtasks }
-          : t
-      ));
-      
-      toast({
-        title: "Task Breakdown Complete",
-        description: `Created ${subtasks.length} subtasks for "${task.description}"`,
-      });
-    } catch (error) {
-      console.error('Task breakdown error:', error);
-      toast({
-        title: "Breakdown Error",
-        description: "Failed to break down task. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -249,9 +228,42 @@ const Index = () => {
     setTasks([]);
   };
 
+  if (!user) {
+    return null;
+  }
+
+  const renderHeader = () => (
+    <header className="relative z-20 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-r from-primary to-blue-500 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">🏠</span>
+          </div>
+          <h1 className="text-xl font-bold text-gray-900">Room Tidy AI</h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 rounded-full px-3 py-2">
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">{user.email}</span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSignOut}
+            className="bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 hover:text-gray-900"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign out
+          </Button>
+        </div>
+      </div>
+    </header>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
       <FloatingBackground />
+      {renderHeader()}
       
       {appState === 'hero' && (
         <ModernHero onGetStarted={handleGetStarted} />
@@ -270,9 +282,9 @@ const Index = () => {
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   Back to Home
                 </Button>
-                <h1 className="text-4xl font-bold mb-4 text-primary">📹 Upload Your Room Video</h1>
+                <h1 className="text-4xl font-bold mb-4 text-foreground">Upload Your Room Video</h1>
                 <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-                  Record a short video of your room (30-60 seconds) showing the areas that need cleaning. 
+                  Record a short video of your room (0-60 seconds) showing the areas that need cleaning. 
                   Our AI will analyze it and create a personalized cleanup plan!
                 </p>
               </div>
@@ -340,11 +352,15 @@ const Index = () => {
                 totalTime={totalTime}
                 onTaskToggle={handleTaskToggle}
                 onSubtaskToggle={handleSubtaskToggle}
-                onTaskBreakdown={handleTaskBreakdown}
               />
             </div>
           )}
         </div>
+      )}
+      
+      {/* PWA Install Prompt */}
+      {showInstallPrompt && (
+        <PWAInstallPrompt onClose={() => setShowInstallPrompt(false)} />
       )}
     </div>
   );
