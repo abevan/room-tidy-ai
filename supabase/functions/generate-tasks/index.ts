@@ -67,25 +67,38 @@ async function generateTaskList(items: DetectedItem[]) {
 
   const prompt = `Based on these detected items: ${JSON.stringify(items)}
 
-Analyze the context and create specific, actionable cleaning tasks. Be contextual - if you see clothes in a laundry basket, suggest "Do dirty laundry" not just "organize clothes". If there are dishes by a sink, say "Wash dishes" not "clean kitchen items". 
+EXTRAPOLATE INTELLIGENTLY from visual context:
+- Clothes in laundry basket = "Do dirty laundry" (not "organize clothes")
+- Dishes by sink = "Wash dishes" (not "clean kitchen items") 
+- Books scattered = "Organize books on shelves" (not "tidy books")
+- Empty bottles = "Take out recycling" (not "clean bottles")
+- Unmade bed = "Make bed and organize bedroom" (not "arrange bedding")
+- Food containers = "Put away groceries/leftovers" (not "organize containers")
+- Towels on floor = "Hang up towels and tidy bathroom" (not "organize towels")
 
-CRITICAL: Avoid creating duplicate or similar tasks. If multiple items suggest the same action (e.g., multiple clothing items), create ONE comprehensive task rather than separate tasks. Group related items into single efficient tasks.
+CRITICAL CONSOLIDATION: Merge similar items into single logical tasks:
+- Multiple clothing items = ONE comprehensive laundry/wardrobe task
+- Multiple dishes/utensils = ONE dishwashing task  
+- Multiple books/papers = ONE organizing task
+- Never create separate tasks for similar items in same area
 
-Create tasks in logical order for maximum efficiency - start with tasks that clear space, then deep cleaning, then organizing. Combine similar actions into single tasks when possible.
+LOGICAL WORKFLOW ORDER:
+1. CLEARING: Remove trash, put away obvious items that block access
+2. SORTING: Group similar items, separate clean/dirty/organize piles
+3. DEEP CLEANING: Surfaces, floors, appliances once space is clear
+4. FINAL ORGANIZING: Put everything in permanent homes
 
-Each task should be broken down into 3-5 detailed substeps that are perfect for voice coaching guidance. The substeps should be specific enough that a personal cleaning coach could walk someone through each one with encouragement and tips.
-
-Return a JSON array of tasks with this structure:
+Return JSON array with this structure:
 {
   "id": "unique_id",
-  "category": "Kitchen/Bathroom/Living Room/Bedroom/General",
-  "description": "Specific, contextual task description that combines related items when appropriate",
+  "category": "Kitchen/Bathroom/Living Room/Bedroom/General", 
+  "description": "Specific contextual action (extrapolated from visual cues)",
   "estimatedTime": minutes_as_number,
-  "priority": "high/medium/low",
+  "priority": "high/medium/low", 
   "completed": false
 }
 
-Order tasks logically: decluttering first, then cleaning surfaces, then organizing. Be specific about actions based on the detected items. Consolidate similar tasks into comprehensive actions. Only return valid JSON, no other text.`
+Be ruthlessly specific and consolidate aggressively. Only return valid JSON, no other text.`
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {

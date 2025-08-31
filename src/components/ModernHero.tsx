@@ -21,10 +21,10 @@ export const ModernHero: React.FC<ModernHeroProps> = ({ onGetStarted }) => {
           
           {/* Title & Tagline */}
           <div className="space-y-6">
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent leading-tight">
-              Room Tidy AI
+            <h1 className="text-4xl sm:text-5xl font-bold text-white drop-shadow-lg leading-tight">
+              CleanSight AI
             </h1>
-            <p className="text-lg text-muted-foreground leading-relaxed">
+            <p className="text-xl text-white/90 drop-shadow-md leading-relaxed font-medium">
               AI-powered cleaning assistant that guides you step-by-step
             </p>
           </div>
@@ -44,16 +44,16 @@ export const ModernHero: React.FC<ModernHeroProps> = ({ onGetStarted }) => {
           {/* Quick Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
             <div className="text-center space-y-2">
-              <div className="w-3 h-3 bg-primary rounded-full mx-auto animate-pulse" />
-              <p className="text-sm font-medium text-muted-foreground">AI Analysis</p>
+              <div className="w-3 h-3 bg-white/80 rounded-full mx-auto animate-pulse" />
+              <p className="text-sm font-medium text-white/80 drop-shadow-sm">AI Analysis</p>
             </div>
             <div className="text-center space-y-2">
-              <div className="w-3 h-3 bg-accent rounded-full mx-auto animate-pulse" style={{ animationDelay: '0.5s' }} />
-              <p className="text-sm font-medium text-muted-foreground">Voice Guide</p>
+              <div className="w-3 h-3 bg-white/80 rounded-full mx-auto animate-pulse" style={{ animationDelay: '0.5s' }} />
+              <p className="text-sm font-medium text-white/80 drop-shadow-sm">Voice Guide</p>
             </div>
             <div className="text-center space-y-2">
-              <div className="w-3 h-3 bg-primary-glow rounded-full mx-auto animate-pulse" style={{ animationDelay: '1s' }} />
-              <p className="text-sm font-medium text-muted-foreground">Smart Planning</p>
+              <div className="w-3 h-3 bg-white/80 rounded-full mx-auto animate-pulse" style={{ animationDelay: '1s' }} />
+              <p className="text-sm font-medium text-white/80 drop-shadow-sm">Smart Planning</p>
             </div>
           </div>
         </div>
