@@ -130,9 +130,24 @@ const Index = () => {
     setProcessingProgress(0);
 
     try {
-      setProcessingProgress(50);
+      setProcessingProgress(30);
       const generatedTasks = await generateTodoList(items);
-      setTasks(generatedTasks);
+      
+      setProcessingProgress(60);
+      // Auto-breakdown all tasks
+      const tasksWithSubtasks = await Promise.all(
+        generatedTasks.map(async (task) => {
+          try {
+            const subtasks = await breakdownTask(task.description);
+            return { ...task, subtasks };
+          } catch (error) {
+            console.error(`Failed to breakdown task: ${task.description}`, error);
+            return task; // Return original task if breakdown fails
+          }
+        })
+      );
+      
+      setTasks(tasksWithSubtasks);
       setProcessingProgress(100);
       
       setTimeout(() => {
@@ -147,32 +162,6 @@ const Index = () => {
         variant: "destructive",
       });
       setAppState('detection');
-    }
-  };
-
-  const handleTaskBreakdown = async (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task || task.subtasks) return;
-
-    try {
-      const subtasks = await breakdownTask(task.description);
-      setTasks(prev => prev.map(t => 
-        t.id === taskId 
-          ? { ...t, subtasks }
-          : t
-      ));
-      
-      toast({
-        title: "Task Breakdown Complete",
-        description: `Created ${subtasks.length} subtasks for "${task.description}"`,
-      });
-    } catch (error) {
-      console.error('Task breakdown error:', error);
-      toast({
-        title: "Breakdown Error",
-        description: "Failed to break down task. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -286,7 +275,6 @@ const Index = () => {
                 totalTime={totalTime}
                 onTaskToggle={handleTaskToggle}
                 onSubtaskToggle={handleSubtaskToggle}
-                onTaskBreakdown={handleTaskBreakdown}
               />
             </div>
           )}

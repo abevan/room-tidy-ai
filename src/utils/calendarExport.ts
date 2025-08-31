@@ -92,7 +92,7 @@ END:VEVENT
         eventCount++;
       });
     } else {
-      // Export single task
+      // Export single task (fallback if no subtasks)
       const startTime = new Date(currentTime);
       const endTime = new Date(currentTime.getTime() + task.timeEstimate * 60 * 1000);
       

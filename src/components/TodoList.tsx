@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Clock, Sparkles, ChevronDown, ChevronRight, Play } from 'lucide-react';
+import { CheckCircle2, Clock, ChevronDown, ChevronRight, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AIMascot } from '@/components/AIMascot';
 import { AudioControls } from '@/components/AudioControls';
@@ -33,7 +33,6 @@ interface TodoListProps {
   totalTime: number;
   onTaskToggle: (taskId: string) => void;
   onSubtaskToggle: (taskId: string, subtaskId: string) => void;
-  onTaskBreakdown: (taskId: string) => void;
 }
 
 export const TodoList: React.FC<TodoListProps> = ({
@@ -41,7 +40,6 @@ export const TodoList: React.FC<TodoListProps> = ({
   totalTime,
   onTaskToggle,
   onSubtaskToggle,
-  onTaskBreakdown,
 }) => {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [showAudioControls, setShowAudioControls] = useState(false);
@@ -68,17 +66,23 @@ export const TodoList: React.FC<TodoListProps> = ({
       setCurrentStep(0);
     }
     
-    if (currentStep < guidanceSteps.length) {
+    await playAllSteps();
+  };
+
+  const playAllSteps = async () => {
+    for (let i = currentStep; i < guidanceSteps.length; i++) {
+      setCurrentStep(i);
       setIsPlaying(true);
       try {
-        await speakText(guidanceSteps[currentStep]);
-        setCurrentStep(prev => prev + 1);
-        setIsPlaying(false);
+        await speakText(guidanceSteps[i]);
+        // Small pause between steps
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
         console.error('Speech error:', error);
-        setIsPlaying(false);
+        break;
       }
     }
+    setIsPlaying(false);
   };
 
   const handlePause = () => {
@@ -258,14 +262,16 @@ export const TodoList: React.FC<TodoListProps> = ({
                 
                 <div className="flex items-center gap-2">
                   <Button
-                    variant="outline"
+                    variant={task.completed ? "secondary" : "default"}
                     size="sm"
-                    onClick={() => onTaskBreakdown(task.id)}
-                    disabled={task.completed}
+                    onClick={() => onTaskToggle(task.id)}
                     className="opacity-80 hover:opacity-100"
                   >
-                    <Sparkles className="w-4 h-4 mr-1" />
-                    Break Down
+                    <CheckCircle2 className={cn(
+                      "w-4 h-4 mr-1",
+                      task.completed ? "fill-current" : ""
+                    )} />
+                    {task.completed ? "Completed" : "Complete"}
                   </Button>
                   
                   {task.subtasks && (
