@@ -28,15 +28,15 @@ export const ProcessingState: React.FC<ProcessingStateProps> = ({
   const steps = isGenerating ? generationSteps : analysisSteps;
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <Card className="p-8 bg-gradient-hero border-0 shadow-medium">
+      <Card className="p-8 glass-morphism border-white/20 shadow-strong">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold mb-2">
-            {isGenerating ? 'Generating Your To-Do List' : 'Analyzing Your Room'}
+          <h2 className="text-3xl font-bold mb-4 text-white">
+            {isGenerating ? 'Generating Your Tasks' : 'Analyzing Your Room'}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-white/80 font-medium">
             {isGenerating 
-              ? 'Creating personalized cleaning tasks based on detected items'
-              : 'Our AI is working hard to identify items in your room'
+              ? 'Creating smart, contextual cleaning tasks based on what we found'
+              : 'Our AI is identifying items and analyzing your space'
             }
           </p>
         </div>
@@ -52,32 +52,32 @@ export const ProcessingState: React.FC<ProcessingStateProps> = ({
                 <div className={`
                   flex items-center justify-center w-12 h-12 rounded-full transition-all duration-500
                   ${isComplete 
-                    ? 'bg-success text-success-foreground shadow-soft' 
+                    ? 'bg-success text-white shadow-glow' 
                     : isActive
-                      ? 'bg-primary text-primary-foreground shadow-medium animate-pulse'
-                      : 'bg-muted text-muted-foreground'
+                      ? 'bg-primary text-white shadow-glow animate-pulse'
+                      : 'bg-white/20 text-white/60 backdrop-blur-sm'
                   }
                 `}>
                   <IconComponent className="w-5 h-5" />
                 </div>
                 
                 <div className="flex-1">
-                  <h3 className={`font-medium transition-colors duration-300 ${
-                    isActive ? 'text-primary' : isComplete ? 'text-success' : 'text-muted-foreground'
+                  <h3 className={`font-semibold text-lg transition-colors duration-300 ${
+                    isActive ? 'text-white' : isComplete ? 'text-success' : 'text-white/70'
                   }`}>
                     {step.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-white/60 font-medium">
                     {step.description}
                   </p>
                 </div>
 
                 {isActive && (
-                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 )}
                 {isComplete && (
-                  <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-success-foreground" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center shadow-glow">
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
@@ -88,11 +88,11 @@ export const ProcessingState: React.FC<ProcessingStateProps> = ({
         </div>
 
         <div className="mt-8">
-          <div className="flex justify-between text-sm text-muted-foreground mb-2">
+          <div className="flex justify-between text-lg font-medium text-white mb-3">
             <span>Overall Progress</span>
             <span>{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-3" />
+          <Progress value={progress} className="h-4" />
         </div>
       </Card>
     </div>

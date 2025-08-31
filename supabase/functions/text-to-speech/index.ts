@@ -8,7 +8,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice_name = 'en-US-Neural2-A', language_code = 'en-US' } = await req.json()
+    const { text, voice_name = 'en-US-Studio-Q', language_code = 'en-US', speaking_rate = 1.1, pitch = 0.5, volume_gain_db = 2.0 } = await req.json()
 
     if (!text) {
       return new Response(
@@ -40,9 +40,10 @@ serve(async (req) => {
         },
         audioConfig: {
           audioEncoding: 'MP3',
-          speakingRate: 1.0,
-          pitch: 0.0,
-          volumeGainDb: 0.0
+          speakingRate: speaking_rate,
+          pitch: pitch,
+          volumeGainDb: volume_gain_db,
+          effectsProfileId: ['telephony-class-application'] // Enhanced audio quality
         }
       }),
     })

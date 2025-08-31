@@ -73,7 +73,7 @@ export const generateStepByStepGuidance = async (taskDescription: string, subtas
 
 export const speakText = async (text: string, volume: number = 0.8): Promise<void> => {
   try {
-    // Try Google Text-to-Speech API first
+    // Try Google Text-to-Speech API first with premium voice settings
     const response = await fetch('https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/text-to-speech', {
       method: 'POST',
       headers: {
@@ -81,8 +81,11 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
       },
       body: JSON.stringify({ 
         text,
-        voice_name: 'en-US-Neural2-A', // Female Neural2 voice for good quality/speed balance
-        language_code: 'en-US' 
+        voice_name: 'en-US-Studio-Q', // Premium Studio voice - most natural
+        language_code: 'en-US',
+        speaking_rate: 1.1, // Slightly faster, more engaging
+        pitch: 0.5, // Warmer tone
+        volume_gain_db: 2.0 // Slightly louder
       }),
     });
 

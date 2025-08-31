@@ -67,38 +67,59 @@ async function generateTaskList(items: DetectedItem[]) {
 
   const prompt = `Based on these detected items: ${JSON.stringify(items)}
 
-EXTRAPOLATE INTELLIGENTLY from visual context:
-- Clothes in laundry basket = "Do dirty laundry" (not "organize clothes")
-- Dishes by sink = "Wash dishes" (not "clean kitchen items") 
-- Books scattered = "Organize books on shelves" (not "tidy books")
-- Empty bottles = "Take out recycling" (not "clean bottles")
-- Unmade bed = "Make bed and organize bedroom" (not "arrange bedding")
-- Food containers = "Put away groceries/leftovers" (not "organize containers")
-- Towels on floor = "Hang up towels and tidy bathroom" (not "organize towels")
+EXTRAPOLATE INTELLIGENTLY using VISUAL CONTEXT and REAL-WORLD LOGIC:
 
-CRITICAL CONSOLIDATION: Merge similar items into single logical tasks:
-- Multiple clothing items = ONE comprehensive laundry/wardrobe task
-- Multiple dishes/utensils = ONE dishwashing task  
-- Multiple books/papers = ONE organizing task
-- Never create separate tasks for similar items in same area
+CONTEXTUAL INTERPRETATION EXAMPLES:
+- Clothes in laundry basket/hamper = "Do laundry" (not "organize clothes")
+- Dirty dishes by sink/counter = "Wash dishes and clean kitchen" (not "organize dishes")
+- Books scattered on floor/desk = "Organize books on shelves" (not "arrange books")
+- Empty bottles/cans = "Take out recycling" (not "organize containers")
+- Unmade bed with pillows/sheets = "Make bed and organize bedroom" (not "fix bedding")
+- Food containers/groceries = "Put away groceries and organize pantry" (not "organize food items")
+- Towels on bathroom floor = "Hang towels and tidy bathroom" (not "organize towels")
+- Clothes on chair/floor = "Put clothes in closet or hamper" (not "move clothes")
+- Shoes scattered = "Organize shoes in closet/rack" (not "arrange footwear")
+- Papers/documents messy = "Sort and file paperwork" (not "organize papers")
+- Electronics/cables tangled = "Organize tech setup and manage cables" (not "arrange electronics")
 
-LOGICAL WORKFLOW ORDER:
-1. CLEARING: Remove trash, put away obvious items that block access
-2. SORTING: Group similar items, separate clean/dirty/organize piles
-3. DEEP CLEANING: Surfaces, floors, appliances once space is clear
-4. FINAL ORGANIZING: Put everything in permanent homes
+ADVANCED CONTEXTUAL RULES:
+- IF items are near sink/kitchen → cleaning/washing tasks
+- IF items are on floor → put away/organize tasks  
+- IF items are scattered → consolidation/organization tasks
+- IF items look dirty/used → cleaning tasks first, then organizing
+- IF storage containers visible → utilize them in task descriptions
+
+CRITICAL CONSOLIDATION - NO DUPLICATES:
+- Multiple dirty items in same area = ONE comprehensive cleaning task
+- Multiple similar items = ONE organizing task covering all
+- Never create separate tasks for items that can be handled together
+- Merge bathroom items, kitchen items, bedroom items into area-based tasks
+
+LOGICAL WORKFLOW SEQUENCE:
+1. CLEARING PHASE: Remove trash, return misplaced items to proper rooms
+2. CLEANING PHASE: Wash dishes, do laundry, clean surfaces (items that need water/supplies)  
+3. ORGANIZING PHASE: Put items in permanent homes, arrange furniture
+4. FINISHING PHASE: Make beds, final tidying touches
+
+TASK NAMING MUST BE SPECIFIC AND ACTIONABLE:
+✅ GOOD: "Do laundry and organize bedroom closet"
+✅ GOOD: "Wash dishes and wipe down kitchen counters"  
+✅ GOOD: "Sort mail and organize desk workspace"
+❌ BAD: "Take care of clothes"
+❌ BAD: "Clean kitchen items"
+❌ BAD: "Organize miscellaneous items"
 
 Return JSON array with this structure:
 {
   "id": "unique_id",
-  "category": "Kitchen/Bathroom/Living Room/Bedroom/General", 
-  "description": "Specific contextual action (extrapolated from visual cues)",
+  "category": "Kitchen/Bathroom/Living Room/Bedroom/General",
+  "description": "Specific action that combines context + visual cues", 
   "estimatedTime": minutes_as_number,
-  "priority": "high/medium/low", 
+  "priority": "high/medium/low",
   "completed": false
 }
 
-Be ruthlessly specific and consolidate aggressively. Only return valid JSON, no other text.`
+Be ruthlessly contextual and consolidate aggressively. Only return valid JSON, no other text.`
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
