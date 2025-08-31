@@ -246,38 +246,9 @@ export const TodoList: React.FC<TodoListProps> = ({
         <div className="text-center mt-2 text-sm text-muted-foreground">
           {Math.round(progress)}% Complete
         </div>
-      </Card>
-
-      {/* AI Mascot & Audio Controls */}
-      <Card className="p-8 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg">
-        <div className="flex flex-col items-center space-y-6">
-          <AIMascot 
-            onClick={handlePlayGuidance}
-            showPlayButton={!showAudioControls}
-            isPlaying={isPlaying}
-          />
-          
-          <div className="text-center">
-            <h3 className="text-xl font-bold mb-2 text-foreground">🎯 AI Cleaning Coach</h3>
-            <p className="text-base text-muted-foreground mb-4">
-              {audioLoading 
-                ? "🎵 Generating your multi-segment audio guidance..."
-                : "Click the mascot to get step-by-step guidance through your cleaning tasks!"
-              }
-            </p>
-            {getLastAudioSource() !== 'unknown' && (
-              <div className="text-xs text-muted-foreground">
-                Audio source: {getLastAudioSource() === 'elevenlabs' ? '🎵 ElevenLabs AI Voice' : '🔄 Browser Voice (Fallback)'}
-              </div>
-            )}
-            {audioLoading && (
-              <div className="text-sm text-primary animate-pulse">
-                Please wait while we prepare your cleaning guidance...
-              </div>
-            )}
-          </div>
-          
-          {/* Calendar Export Button */}
+        
+        {/* Calendar Export Button */}
+        <div className="flex justify-center mt-4">
           <Button
             variant="outline"
             onClick={() => exportToCalendar(tasks)}
@@ -286,21 +257,6 @@ export const TodoList: React.FC<TodoListProps> = ({
             <Download className="w-5 h-5" />
             Export to Calendar
           </Button>
-          
-          {showAudioControls && (
-            <div className="w-full max-w-md">
-              <AudioControls
-                isPlaying={isPlaying}
-                onPlay={isAudioPaused ? handleResume : handlePlayGuidance}
-                onPause={handlePause}
-                onStop={handleStop}
-                currentStep={currentStep}
-                totalSteps={guidanceSteps.length}
-                onStepChange={handleStepChange}
-                currentSegmentTitle={currentSegments[currentStep]?.type}
-              />
-            </div>
-          )}
         </div>
       </Card>
 
@@ -353,15 +309,6 @@ export const TodoList: React.FC<TodoListProps> = ({
                     {task.completed ? "Completed" : "Complete"}
                   </Button>
                   
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTaskGuidance(task)}
-                    disabled={audioLoading}
-                    className="text-xs"
-                  >
-                    🎯 Get Coaching
-                  </Button>
                   {task.subtasks && task.subtasks.length > 0 && (
                     <Button
                       variant="ghost"

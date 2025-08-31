@@ -110,9 +110,9 @@ NEVER create generic tasks like "organize items" or "clean things". ALWAYS be sp
 - Why it makes sense (context from what was detected)
 
 TIME ESTIMATES (be realistic):
-- Simple tasks (make bed): 5-10 minutes
-- Medium tasks (wash dishes): 15-25 minutes  
-- Complex tasks (full room organization): 30-45 minutes
+- Simple tasks (make bed): 1-2 minutes
+- Medium tasks (wash dishes): 3-5 minutes  
+- Complex tasks (full room organization): 6-9 minutes
 
 Return JSON array with this structure:
 {
