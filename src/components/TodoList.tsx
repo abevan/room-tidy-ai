@@ -279,17 +279,6 @@ export const TodoList: React.FC<TodoListProps> = ({
                 
                 <div className="flex items-center gap-2">
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleGenerateGuidance(task)}
-                    disabled={audioLoading}
-                    className="opacity-80 hover:opacity-100"
-                  >
-                    <Play className="w-4 h-4 mr-1" />
-                    {audioLoading ? "Loading..." : "Coach Me"}
-                  </Button>
-                  
-                  <Button
                     variant={task.completed ? "secondary" : "default"}
                     size="sm"
                     onClick={() => onTaskToggle(task.id)}
