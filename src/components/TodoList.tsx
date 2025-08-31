@@ -108,46 +108,6 @@ export const TodoList: React.FC<TodoListProps> = ({
     setCurrentStep(0);
   };
 
-  const handleGenerateGuidance = async (task: Task) => {
-    setAudioLoading(true);
-    try {
-      console.log('🎯 Generating multi-segment guidance for task:', task.description);
-      
-      // Generate multiple short segments instead of one long text
-      const taskSegments = generateTaskSegments(task);
-      const segmentTexts = taskSegments.map(segment => segment.text);
-      
-      setGuidanceSteps(segmentTexts);
-      setCurrentStep(0);
-      setShowAudioControls(true);
-      
-      // Play all segments in sequence with natural pauses
-      console.log('🎯 Playing', taskSegments.length, 'task guidance segments');
-      setIsPlaying(true);
-      
-      await playSegmentSequence(
-        taskSegments,
-        (segment, index) => {
-          setCurrentStep(index);
-          console.log(`🎯 Starting segment ${index + 1}: ${segment.type}`);
-        },
-        (segment, index) => {
-          console.log(`🎯 Completed segment ${index + 1}: ${segment.type}`);
-          console.log(`🎵 Audio source used: ${getLastAudioSource()}`);
-        },
-        2000 // 2 second pause between segments
-      );
-      
-      setIsPlaying(false);
-      console.log('🎯 All task guidance segments completed');
-      
-    } catch (error) {
-      console.error('Error generating guidance:', error);
-      setIsPlaying(false);
-    } finally {
-      setAudioLoading(false);
-    }
-  };
 
   const handlePlayStep = async (stepIndex: number) => {
     if (stepIndex < guidanceSteps.length) {
@@ -325,15 +285,6 @@ export const TodoList: React.FC<TodoListProps> = ({
                     {task.completed ? "Completed" : "Complete"}
                   </Button>
                   
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleGenerateGuidance(task)}
-                    disabled={audioLoading}
-                    className="text-xs"
-                  >
-                    🎯 Get Coaching
-                  </Button>
                   
                   {task.subtasks && task.subtasks.length > 0 && (
                     <Button

@@ -25,11 +25,6 @@ export const usePWA = () => {
       setIsInstalled(true);
     } else {
       console.log('🔧 PWA: App is not installed, listening for install prompt');
-      // For testing, make it immediately installable
-      setTimeout(() => {
-        console.log('🔧 PWA: Setting installable to true for testing');
-        setIsInstallable(true);
-      }, 2000);
     }
 
     // Listen for beforeinstallprompt event
@@ -65,14 +60,7 @@ export const usePWA = () => {
       return false;
     };
     
-    if (checkPWACriteria()) {
-      setTimeout(() => {
-        if (!isInstalled && !deferredPrompt) {
-          console.log('🔧 PWA: Force enabling installable state');
-          setIsInstallable(true);
-        }
-      }, 3000);
-    }
+    checkPWACriteria();
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as any);
     window.addEventListener('appinstalled', handleAppInstalled);
