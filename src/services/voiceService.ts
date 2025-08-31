@@ -99,14 +99,22 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
     console.log('🎵 TTS: Text preview:', text.substring(0, 100) + '...');
     console.log('🎵 TTS: Text length:', text.length, 'characters');
     
+    // Limit text length for API
+    const limitedText = text.substring(0, 500);
+    
     // Force ElevenLabs API call with detailed logging
     const response = await fetch('https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/text-to-speech', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'audio/mpeg',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM'
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ 
+        text: limitedText,
+        voice_id: '9BWtsMINqrJLrRacOk9x', // Aria voice
+        model_id: 'eleven_multilingual_v2'
+      }),
     });
 
     console.log('🎵 TTS: ElevenLabs API response status:', response.status);
