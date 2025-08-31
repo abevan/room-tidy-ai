@@ -71,70 +71,110 @@ export const generateStepByStepGuidance = async (taskDescription: string, subtas
   return steps;
 };
 
-export const speakText = (text: string, volume: number = 0.8): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    if (!('speechSynthesis' in window)) {
-      reject(new Error('Speech synthesis not supported'));
-      return;
-    }
+export const speakText = async (text: string, volume: number = 0.8): Promise<void> => {
+  try {
+    // Try Google Text-to-Speech API first
+    const response = await fetch('https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/text-to-speech', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        text,
+        voice_name: 'en-US-Neural2-A', // Female Neural2 voice for good quality/speed balance
+        language_code: 'en-US' 
+      }),
+    });
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    utterance.pitch = 1.1;
-    utterance.volume = volume / 100;
-    
-    // Wait for voices to load, then select the best one
-    const selectVoice = () => {
-      const voices = speechSynthesis.getVoices();
+    if (response.ok) {
+      const audioData = await response.arrayBuffer();
+      const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.volume = volume / 100;
       
-      // Prefer high-quality voices in order of preference
-      const preferredVoices = [
-        // Google voices (highest quality)
-        'Google US English',
-        'Google UK English Female',
-        'Google UK English Male',
-        
-        // System voices with "Natural" or "Enhanced"
-        voices.find(voice => voice.name.includes('Natural')),
-        voices.find(voice => voice.name.includes('Enhanced')),
-        voices.find(voice => voice.name.includes('Premium')),
-        
-        // Microsoft voices
-        voices.find(voice => voice.name.includes('Microsoft') && voice.name.includes('Aria')),
-        voices.find(voice => voice.name.includes('Microsoft') && voice.name.includes('Jenny')),
-        
-        // Other good options
-        voices.find(voice => voice.name.includes('Samantha')),
-        voices.find(voice => voice.name.includes('Alex')),
-        voices.find(voice => voice.name.includes('Victoria')),
-      ].filter(Boolean);
-
-      const selectedVoice = preferredVoices.find(voice => 
-        typeof voice === 'string' ? 
-          voices.find(v => v.name === voice) : 
-          voice
-      );
-
-      if (selectedVoice) {
-        utterance.voice = typeof selectedVoice === 'string' ? 
-          voices.find(v => v.name === selectedVoice) || null :
-          selectedVoice;
-      }
-    };
-
-    // Try to select voice immediately
-    selectVoice();
-    
-    // If no voices available, wait for them to load
-    if (speechSynthesis.getVoices().length === 0) {
-      speechSynthesis.addEventListener('voiceschanged', selectVoice, { once: true });
+      return new Promise((resolve, reject) => {
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          resolve();
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(audioUrl);
+          reject(new Error('Audio playback failed'));
+        };
+        audio.play();
+      });
+    } else {
+      throw new Error('Google TTS API failed, falling back to browser speech');
     }
+  } catch (error) {
+    console.warn('Google TTS failed, using browser speech synthesis:', error);
+    
+    // Fallback to browser speech synthesis
+    return new Promise((resolve, reject) => {
+      if (!('speechSynthesis' in window)) {
+        reject(new Error('Speech synthesis not supported'));
+        return;
+      }
 
-    utterance.onend = () => resolve();
-    utterance.onerror = (event) => reject(event.error);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.1;
+      utterance.volume = volume / 100;
+      
+      // Wait for voices to load, then select the best one
+      const selectVoice = () => {
+        const voices = speechSynthesis.getVoices();
+        
+        // Prefer high-quality voices in order of preference
+        const preferredVoices = [
+          // Google voices (highest quality)
+          'Google US English',
+          'Google UK English Female',
+          'Google UK English Male',
+          
+          // System voices with "Natural" or "Enhanced"
+          voices.find(voice => voice.name.includes('Natural')),
+          voices.find(voice => voice.name.includes('Enhanced')),
+          voices.find(voice => voice.name.includes('Premium')),
+          
+          // Microsoft voices
+          voices.find(voice => voice.name.includes('Microsoft') && voice.name.includes('Aria')),
+          voices.find(voice => voice.name.includes('Microsoft') && voice.name.includes('Jenny')),
+          
+          // Other good options
+          voices.find(voice => voice.name.includes('Samantha')),
+          voices.find(voice => voice.name.includes('Alex')),
+          voices.find(voice => voice.name.includes('Victoria')),
+        ].filter(Boolean);
 
-    speechSynthesis.speak(utterance);
-  });
+        const selectedVoice = preferredVoices.find(voice => 
+          typeof voice === 'string' ? 
+            voices.find(v => v.name === voice) : 
+            voice
+        );
+
+        if (selectedVoice) {
+          utterance.voice = typeof selectedVoice === 'string' ? 
+            voices.find(v => v.name === selectedVoice) || null :
+            selectedVoice;
+        }
+      };
+
+      // Try to select voice immediately
+      selectVoice();
+      
+      // If no voices available, wait for them to load
+      if (speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.addEventListener('voiceschanged', selectVoice, { once: true });
+      }
+
+      utterance.onend = () => resolve();
+      utterance.onerror = (event) => reject(event.error);
+
+      speechSynthesis.speak(utterance);
+    });
+  }
 };
 
 export const stopSpeaking = () => {
