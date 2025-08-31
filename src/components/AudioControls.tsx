@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, SkipForward, Volume2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Square } from 'lucide-react';
 
 interface AudioControlsProps {
   isPlaying: boolean;
@@ -11,6 +11,7 @@ interface AudioControlsProps {
   currentStep: number;
   totalSteps: number;
   onStepChange: (step: number) => void;
+  currentSegmentTitle?: string;
 }
 
 export const AudioControls: React.FC<AudioControlsProps> = ({
@@ -21,6 +22,7 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
   currentStep,
   totalSteps,
   onStepChange,
+  currentSegmentTitle,
 }) => {
   const [volume, setVolume] = useState([80]);
 
@@ -33,13 +35,13 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
   };
 
   const handlePrevious = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       onStepChange(currentStep - 1);
     }
   };
 
   const handleNext = () => {
-    if (currentStep < totalSteps) {
+    if (currentStep < totalSteps - 1) {
       onStepChange(currentStep + 1);
     }
   };
@@ -52,7 +54,7 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
           variant="outline"
           size="icon"
           onClick={handlePrevious}
-          disabled={currentStep <= 1}
+          disabled={currentStep <= 0}
           className="h-10 w-10"
         >
           <SkipBack className="w-4 h-4" />
@@ -75,7 +77,7 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
           variant="outline"
           size="icon"
           onClick={handleNext}
-          disabled={currentStep >= totalSteps}
+          disabled={currentStep >= totalSteps - 1}
           className="h-10 w-10"
         >
           <SkipForward className="w-4 h-4" />
@@ -85,13 +87,18 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
       {/* Progress */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Step {currentStep} of {totalSteps}</span>
-          <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
+          <span>Step {currentStep + 1} of {totalSteps}</span>
+          <span>{Math.round(((currentStep + 1) / totalSteps) * 100)}%</span>
         </div>
+        {currentSegmentTitle && (
+          <div className="text-xs text-center text-muted-foreground bg-muted/50 rounded px-2 py-1">
+            {currentSegmentTitle}
+          </div>
+        )}
         <div className="w-full bg-muted rounded-full h-2">
           <div
             className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
           />
         </div>
       </div>

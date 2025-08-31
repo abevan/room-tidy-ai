@@ -93,8 +93,11 @@ You're in the flow now, and that's a beautiful thing. Keep that energy going, st
   return [taskGuidance];
 };
 
-// Enhanced audio source detection
+// Enhanced audio source detection and control
+let currentAudio: HTMLAudioElement | null = null;
+let currentUtterance: SpeechSynthesisUtterance | null = null;
 let lastAudioSource: 'elevenlabs' | 'browser' | 'unknown' = 'unknown';
+let isAudioPaused = false;
 
 export const getLastAudioSource = () => lastAudioSource;
 
@@ -163,6 +166,10 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
     
+    // Store for pause/resume control
+    currentAudio = audio;
+    isAudioPaused = false;
+    
     // Set volume
     audio.volume = Math.max(0, Math.min(1, volume));
 
@@ -174,14 +181,18 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
       audio.onended = () => {
         console.log('🎵 TTS: ✅ ElevenLabs audio playback completed');
         URL.revokeObjectURL(audioUrl);
+        currentAudio = null;
+        isAudioPaused = false;
         resolve();
       };
 
       audio.onerror = (error) => {
         console.error('🎵 TTS: ❌ Audio playback error:', error);
         URL.revokeObjectURL(audioUrl);
+        currentAudio = null;
+        isAudioPaused = false;
         lastAudioSource = 'unknown';
-        reject(new Error('Audio playback failed'));
+        reject(new Error('Audio playbook failed'));
       };
 
       audio.onloadeddata = () => {
@@ -209,6 +220,9 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
         utterance.volume = volume;
         utterance.rate = 0.9;
         utterance.pitch = 1.0;
+        
+        // Store for pause/resume control
+        currentUtterance = utterance;
 
         // Try to select a high-quality voice
         const voices = speechSynthesis.getVoices();
@@ -226,6 +240,7 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
 
         utterance.onend = () => {
           console.log('🎵 TTS: 🔄 Browser TTS completed');
+          currentUtterance = null;
           resolve();
         };
 
@@ -245,19 +260,54 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
 };
 
 export const stopSpeaking = () => {
+  // Stop ElevenLabs audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+  
+  // Stop browser TTS
   if ('speechSynthesis' in window) {
     speechSynthesis.cancel();
   }
+  
+  currentUtterance = null;
+  isAudioPaused = false;
 };
 
 export const pauseSpeaking = () => {
+  // Pause ElevenLabs audio
+  if (currentAudio && !currentAudio.paused) {
+    currentAudio.pause();
+    isAudioPaused = true;
+    console.log('🎵 TTS: ⏸️ Paused ElevenLabs audio');
+    return;
+  }
+  
+  // Pause browser TTS
   if ('speechSynthesis' in window && speechSynthesis.speaking) {
     speechSynthesis.pause();
+    isAudioPaused = true;
+    console.log('🎵 TTS: ⏸️ Paused browser TTS');
   }
 };
 
 export const resumeSpeaking = () => {
+  // Resume ElevenLabs audio
+  if (currentAudio && currentAudio.paused && isAudioPaused) {
+    currentAudio.play();
+    isAudioPaused = false;
+    console.log('🎵 TTS: ▶️ Resumed ElevenLabs audio');
+    return;
+  }
+  
+  // Resume browser TTS
   if ('speechSynthesis' in window && speechSynthesis.paused) {
     speechSynthesis.resume();
+    isAudioPaused = false;
+    console.log('🎵 TTS: ▶️ Resumed browser TTS');
   }
 };
+
+export const isCurrentlyPaused = () => isAudioPaused;

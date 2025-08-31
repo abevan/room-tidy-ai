@@ -13,53 +13,89 @@ interface AudioSegment {
   duration?: number;
 }
 
-// Generate multiple audio segments for task guidance
+// Generate task-specific audio segments for better coaching
 export const generateTaskSegments = (task: Task): AudioSegment[] => {
   const segments: AudioSegment[] = [];
+  const taskName = task.description.toLowerCase();
+  const category = task.category.toLowerCase();
 
-  // 1. Welcome & Task Introduction (15-20 seconds)
+  // 1. Task Introduction (15-20 seconds) - Specific to the task
   segments.push({
     id: `${task.id}_intro`,
-    text: `Hey there, cleaning champion! Ready to tackle ${task.description}? This is going to be so satisfying - let's make it fun!`,
+    text: `Let's tackle ${task.description}! This ${category} task will make a real difference in how your space looks and feels.`,
     type: 'intro'
   });
 
-  // 2. Get Ready Step (10-15 seconds)
+  // 2. Preparation Step (10-15 seconds) - Task-specific prep
+  const prepText = getTaskSpecificPrep(task.description, category);
   segments.push({
     id: `${task.id}_prep`,
-    text: `First, let's set ourselves up for success! Put on some energizing music, grab any supplies you might need, and take a deep breath. You've got this!`,
+    text: prepText,
     type: 'step'
   });
 
-  // 3. Main Action Step (20-25 seconds)
+  // 3. Main Action Step (20-25 seconds) - Detailed task instructions
+  const actionText = getTaskSpecificAction(task.description, category);
   segments.push({
     id: `${task.id}_action`,
-    text: `Now for the main event! Focus on ${task.description.toLowerCase()} with confidence. Work at your own pace - there's no rush. Each item you organize is a small victory worth celebrating!`,
+    text: actionText,
     type: 'step'
   });
 
-  // 4. Mid-Task Motivation (15-20 seconds)
-  segments.push({
-    id: `${task.id}_motivation`,
-    text: `You're doing amazing! I can already see how great this ${task.category.toLowerCase()} space is going to look. Your future self will thank you for this effort!`,
-    type: 'motivation'
-  });
-
-  // 5. Final Push (15-20 seconds)
-  segments.push({
-    id: `${task.id}_finish`,
-    text: `Almost there! Give it those final touches and step back to admire your work. You're transforming your space one task at a time!`,
-    type: 'step'
-  });
-
-  // 6. Completion Celebration (10-15 seconds)
+  // 4. Completion (10-15 seconds) - Specific achievement
   segments.push({
     id: `${task.id}_complete`,
-    text: `Fantastic work! ${task.description} is complete! Take a moment to appreciate what you've accomplished. You're absolutely crushing these goals!`,
+    text: `Great work! ${task.description} is complete. Notice how much cleaner and more organized this ${category} area looks now.`,
     type: 'completion'
   });
 
   return segments;
+};
+
+// Helper function for task-specific preparation instructions
+const getTaskSpecificPrep = (description: string, category: string): string => {
+  const lowerDesc = description.toLowerCase();
+  
+  if (lowerDesc.includes('clothes') || lowerDesc.includes('shirts') || lowerDesc.includes('pants')) {
+    return "First, clear a flat surface like your bed or dresser. Grab any hangers you'll need and have a donation bag ready for items you no longer wear.";
+  }
+  
+  if (lowerDesc.includes('dishes') || lowerDesc.includes('plates') || lowerDesc.includes('kitchen')) {
+    return "Clear some counter space and have your dish soap and sponge ready. Fill the sink with warm soapy water if needed.";
+  }
+  
+  if (lowerDesc.includes('books') || lowerDesc.includes('papers') || lowerDesc.includes('documents')) {
+    return "Have a recycling bin nearby for papers you don't need. Keep any important documents separate to file properly.";
+  }
+  
+  if (lowerDesc.includes('toys') || lowerDesc.includes('games')) {
+    return "Check that all toy containers or boxes are accessible. Have a cloth ready to wipe down any dusty items.";
+  }
+  
+  return `Prepare the area around ${description.toLowerCase()} by clearing a small workspace and having a cloth handy for cleaning.`;
+};
+
+// Helper function for task-specific action instructions  
+const getTaskSpecificAction = (description: string, category: string): string => {
+  const lowerDesc = description.toLowerCase();
+  
+  if (lowerDesc.includes('clothes') || lowerDesc.includes('shirts') || lowerDesc.includes('pants')) {
+    return "Sort items by type - shirts together, pants together. Fold or hang each piece neatly. Put similar colors together and arrange by frequency of use.";
+  }
+  
+  if (lowerDesc.includes('dishes') || lowerDesc.includes('plates') || lowerDesc.includes('kitchen')) {
+    return "Wash items from least dirty to most dirty. Rinse each piece thoroughly and place in the drying rack. Wipe down the counter when finished.";
+  }
+  
+  if (lowerDesc.includes('books') || lowerDesc.includes('papers') || lowerDesc.includes('documents')) {
+    return "Group similar items together. Stack books by size with larger ones on bottom. File important papers in their proper places and recycle what you don't need.";
+  }
+  
+  if (lowerDesc.includes('toys') || lowerDesc.includes('games')) {
+    return "Group toys by type or size. Put complete sets together and check that game pieces are all present. Store frequently used items in easy-to-reach places.";
+  }
+  
+  return `Organize ${description.toLowerCase()} by grouping similar items together and arranging them neatly in their designated space.`;
 };
 
 // Generate overview motivation segments for all tasks
@@ -99,7 +135,10 @@ export const generateOverviewSegments = (tasks: Task[], totalTime: number): Audi
   return segments;
 };
 
-// Play multiple segments with natural pauses
+// Store audio objects for replay functionality
+const audioCache = new Map<string, HTMLAudioElement>();
+
+// Play multiple segments with natural pauses and audio storage
 export const playSegmentSequence = async (
   segments: AudioSegment[],
   onSegmentStart?: (segment: AudioSegment, index: number) => void,
@@ -130,4 +169,20 @@ export const playSegmentSequence = async (
       break;
     }
   }
+};
+
+// Play a specific segment by index
+export const playSpecificSegment = async (
+  segments: AudioSegment[],
+  segmentIndex: number
+): Promise<void> => {
+  if (segmentIndex < 0 || segmentIndex >= segments.length) {
+    throw new Error('Invalid segment index');
+  }
+  
+  const segment = segments[segmentIndex];
+  console.log(`🎵 Playing specific segment ${segmentIndex + 1}:`, segment.text.substring(0, 50) + '...');
+  
+  const { speakText } = await import('./voiceService');
+  await speakText(segment.text);
 };

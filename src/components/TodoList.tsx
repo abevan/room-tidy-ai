@@ -45,8 +45,10 @@ export const TodoList: React.FC<TodoListProps> = ({
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [showAudioControls, setShowAudioControls] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isAudioPaused, setIsAudioPaused] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [guidanceSteps, setGuidanceSteps] = useState<string[]>([]);
+  const [currentSegments, setCurrentSegments] = useState<any[]>([]);
   const [audioLoading, setAudioLoading] = useState(false);
   
   const completedTasks = tasks.filter(task => task.completed).length;
@@ -60,72 +62,137 @@ export const TodoList: React.FC<TodoListProps> = ({
       // Generate multiple overview segments instead of one long text
       const overviewSegments = generateOverviewSegments(tasks, totalTime);
       setGuidanceSteps(overviewSegments.map(segment => segment.text));
+      setCurrentSegments(overviewSegments);
     }
   }, [tasks, totalTime]);
 
   const handlePlayGuidance = async () => {
-    if (!showAudioControls) {
+    if (guidanceSteps.length === 0 || currentSegments.length === 0) return;
+    
+    try {
+      setIsPlaying(true);
+      setIsAudioPaused(false);
       setShowAudioControls(true);
+      console.log('🎯 Starting overview guidance playback');
+      
+      await playSegmentSequence(
+        currentSegments,
+        (segment, index) => {
+          setCurrentStep(index);
+          console.log(`🎯 Starting segment ${index + 1}: ${segment.type}`);
+        },
+        (segment, index) => {
+          console.log(`🎯 Completed segment ${index + 1}: ${segment.type}`);
+          console.log(`🎵 Audio source used: ${getLastAudioSource()}`);
+        },
+        2000 // 2 second pause between segments
+      );
+      
+      setIsPlaying(false);
+      console.log('🎯 All overview guidance segments completed');
+      
+    } catch (error) {
+      console.error('Error playing guidance:', error);
+      setIsPlaying(false);
+      setIsAudioPaused(false);
+    }
+  };
+
+  const handleTaskGuidance = async (task: Task) => {
+    setAudioLoading(true);
+    try {
+      console.log('🎯 Generating task-specific guidance for:', task.description);
+      
+      // Generate task-specific segments
+      const taskSegments = generateTaskSegments(task);
+      const segmentTexts = taskSegments.map(segment => segment.text);
+      
+      setGuidanceSteps(segmentTexts);
+      setCurrentSegments(taskSegments);
       setCurrentStep(0);
-      setAudioLoading(true);
-      await playAllSteps();
+      setShowAudioControls(true);
+      setIsPlaying(true);
+      setIsAudioPaused(false);
+      
+      // Play all segments in sequence
+      console.log('🎯 Playing', taskSegments.length, 'task guidance segments');
+      
+      await playSegmentSequence(
+        taskSegments,
+        (segment, index) => {
+          setCurrentStep(index);
+          console.log(`🎯 Starting segment ${index + 1}: ${segment.type}`);
+        },
+        (segment, index) => {
+          console.log(`🎯 Completed segment ${index + 1}: ${segment.type}`);
+          console.log(`🎵 Audio source used: ${getLastAudioSource()}`);
+        },
+        2000 // 2 second pause between segments
+      );
+      
+      setIsPlaying(false);
+      console.log('🎯 All task guidance segments completed');
+      
+    } catch (error) {
+      console.error('Error generating guidance:', error);
+      setIsPlaying(false);
+      setIsAudioPaused(false);
+    } finally {
       setAudioLoading(false);
     }
   };
 
-  const playAllSteps = async () => {
-    for (let i = currentStep; i < guidanceSteps.length; i++) {
-      setCurrentStep(i);
-      setIsPlaying(true);
-      try {
-        console.log(`🎵 Playing step ${i + 1}:`, guidanceSteps[i].substring(0, 50) + '...');
-        await speakText(guidanceSteps[i]);
-        console.log(`🎵 Completed step ${i + 1}`);
-        // Small pause between steps
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (error) {
-        console.error('Speech error at step', i + 1, ':', error);
-        break;
-      }
-    }
-    setIsPlaying(false);
-  };
-
   const handlePause = () => {
+    console.log('🎵 Pause requested');
+    const { pauseSpeaking } = require('../services/voiceService');
     pauseSpeaking();
     setIsPlaying(false);
+    setIsAudioPaused(true);
   };
 
   const handleResume = () => {
+    console.log('🎵 Resume requested');
+    const { resumeSpeaking } = require('../services/voiceService');
     resumeSpeaking();
     setIsPlaying(true);
+    setIsAudioPaused(false);
   };
 
   const handleStop = () => {
+    console.log('🎵 Stop requested');
+    const { stopSpeaking } = require('../services/voiceService');
     stopSpeaking();
     setIsPlaying(false);
+    setIsAudioPaused(false);
     setShowAudioControls(false);
     setCurrentStep(0);
   };
 
 
   const handlePlayStep = async (stepIndex: number) => {
-    if (stepIndex < guidanceSteps.length) {
+    if (stepIndex < 0 || stepIndex >= currentSegments.length) return;
+    
+    try {
+      console.log(`🎵 Playing specific step ${stepIndex + 1}`);
       setCurrentStep(stepIndex);
       setIsPlaying(true);
-      try {
-        await speakText(guidanceSteps[stepIndex]);
-        setIsPlaying(false);
-        // Don't auto-advance - let user control when to move to next step
-      } catch (error) {
-        console.error('Error playing audio:', error);
-        setIsPlaying(false);
-      }
+      setIsAudioPaused(false);
+      
+      const { playSpecificSegment } = await import('../services/multiSegmentVoiceService');
+      await playSpecificSegment(currentSegments, stepIndex);
+      
+      setIsPlaying(false);
+      console.log(`🎵 Completed step ${stepIndex + 1}`);
+    } catch (error) {
+      console.error('Error playing step:', error);
+      setIsPlaying(false);
+      setIsAudioPaused(false);
     }
   };
 
-  const handleStepChange = async (step: number) => {
-    await handlePlayStep(step);
+  const handleStepChange = async (newStep: number) => {
+    console.log(`🎵 Step change requested: ${newStep + 1}`);
+    await handlePlayStep(newStep);
   };
 
   const toggleExpand = (taskId: string) => {
@@ -224,12 +291,13 @@ export const TodoList: React.FC<TodoListProps> = ({
             <div className="w-full max-w-md">
               <AudioControls
                 isPlaying={isPlaying}
-                onPlay={handleResume}
+                onPlay={isAudioPaused ? handleResume : handlePlayGuidance}
                 onPause={handlePause}
                 onStop={handleStop}
                 currentStep={currentStep}
                 totalSteps={guidanceSteps.length}
                 onStepChange={handleStepChange}
+                currentSegmentTitle={currentSegments[currentStep]?.type}
               />
             </div>
           )}
@@ -285,7 +353,15 @@ export const TodoList: React.FC<TodoListProps> = ({
                     {task.completed ? "Completed" : "Complete"}
                   </Button>
                   
-                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleTaskGuidance(task)}
+                    disabled={audioLoading}
+                    className="text-xs"
+                  >
+                    🎯 Get Coaching
+                  </Button>
                   {task.subtasks && task.subtasks.length > 0 && (
                     <Button
                       variant="ghost"
