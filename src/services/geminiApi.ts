@@ -21,130 +21,87 @@ interface Subtask {
   completed: boolean;
 }
 
-export const generateTodoList = async (items: DetectedItem[], apiKey: string): Promise<Task[]> => {
+export const generateTodoList = async (items: DetectedItem[]): Promise<Task[]> => {
   try {
-    const itemsDescription = items.map(item => {
-      const location = item.location ? ` (${item.location})` : '';
-      return `${item.name}${location}`;
-    }).join(', ');
+    // Input validation
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error('Invalid items data');
+    }
 
-    const prompt = `You are an expert room organizer and cleaning assistant. Based on the following items detected in a room, create a comprehensive cleaning and organizing to-do list.
-
-Items detected: ${itemsDescription}
-
-Please create a realistic cleaning plan with the following requirements:
-1. Group related tasks by category (Clothing, Surface, Items, General)
-2. Provide realistic time estimates in minutes for each task
-3. Focus on cleaning, organizing, and tidying actions
-4. Be specific about what needs to be done
-5. Prioritize tasks that make the biggest visual impact
-
-Respond ONLY with a valid JSON array of tasks in this exact format:
-[
-  {
-    "id": "1",
-    "description": "Task description",
-    "timeEstimate": 10,
-    "completed": false,
-    "category": "Category"
-  }
-]
-
-Do not include any other text or explanations.`;
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // Call secure Edge Function
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-tasks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1000,
-        }
+        action: 'generateTasks',
+        items: items
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+      throw new Error(`Task generation failed: ${response.status}`);
     }
 
-    const data = await response.json();
-    const content = data.candidates[0].content.parts[0].text;
-    
-    // Extract JSON from the response
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON found in response');
-    }
+    const { tasks } = await response.json();
 
-    const tasks = JSON.parse(jsonMatch[0]);
-    return tasks;
+    // Validate and format tasks
+    return tasks.map((task: any, index: number) => ({
+      id: task.id || `task_${index}`,
+      description: task.description || 'Unknown task',
+      timeEstimate: Math.max(task.estimatedTime || task.timeEstimate || 5, 1),
+      completed: false,
+      category: task.category || 'General',
+      subtasks: []
+    }));
+
   } catch (error) {
-    console.error('Gemini API error:', error);
-    throw error;
+    console.error('Error generating todo list:', error);
+    throw new Error('Failed to generate todo list');
   }
 };
 
-export const breakdownTask = async (taskDescription: string, apiKey: string): Promise<Subtask[]> => {
+export const breakdownTask = async (taskDescription: string): Promise<Subtask[]> => {
   try {
-    const prompt = `Break down the following cleaning/organizing task into smaller, actionable sub-tasks with realistic time estimates.
+    // Input validation
+    if (!taskDescription || typeof taskDescription !== 'string' || taskDescription.trim().length === 0) {
+      throw new Error('Invalid task description');
+    }
 
-Task: "${taskDescription}"
+    // Sanitize input
+    const sanitizedDescription = taskDescription.trim().slice(0, 500);
 
-Create 3-5 specific sub-tasks that are easy to follow and complete. Each sub-task should take between 1-5 minutes.
-
-Respond ONLY with a valid JSON array in this exact format:
-[
-  {
-    "id": "a",
-    "description": "Subtask description",
-    "timeEstimate": 3,
-    "completed": false
-  }
-]
-
-Do not include any other text or explanations.`;
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // Call secure Edge Function
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-tasks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 500,
-        }
+        action: 'breakdownTask',
+        taskDescription: sanitizedDescription
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+      throw new Error(`Task breakdown failed: ${response.status}`);
     }
 
-    const data = await response.json();
-    const content = data.candidates[0].content.parts[0].text;
-    
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON found in response');
-    }
+    const { subtasks } = await response.json();
 
-    const subtasks = JSON.parse(jsonMatch[0]);
-    return subtasks;
+    // Validate and format subtasks
+    return subtasks.map((subtask: any, index: number) => ({
+      id: subtask.id || `subtask_${index}`,
+      description: subtask.description || 'Unknown subtask',
+      timeEstimate: Math.max(subtask.estimatedTime || subtask.timeEstimate || 2, 1),
+      completed: false
+    }));
+
   } catch (error) {
-    console.error('Gemini breakdown error:', error);
-    throw error;
+    console.error('Error breaking down task:', error);
+    throw new Error('Failed to breakdown task');
   }
 };

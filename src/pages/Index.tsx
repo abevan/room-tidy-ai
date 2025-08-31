@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ModernHero } from '@/components/ModernHero';
-import { ApiKeySetup } from '@/components/ApiKeySetup';
 import { VideoUpload } from '@/components/VideoUpload';
 import { ProcessingState } from '@/components/ProcessingState';
 import { DetectionReview } from '@/components/DetectionReview';
@@ -94,11 +93,10 @@ interface Subtask {
   completed: boolean;
 }
 
-type AppState = 'hero' | 'apikey' | 'upload' | 'processing' | 'detection' | 'generating' | 'results';
+type AppState = 'hero' | 'upload' | 'processing' | 'detection' | 'generating' | 'results';
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>('hero');
-  const [apiKey, setApiKey] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState(1);
@@ -108,27 +106,9 @@ const Index = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
 
-  // Set the provided API key on app load
-  React.useEffect(() => {
-    const providedKey = 'AIzaSyDLk4UzQTCaiD_b4cFQt-dQWCzeAb1dUhY';
-    localStorage.setItem('google_api_key', providedKey);
-    setApiKey(providedKey);
-  }, []);
-  
   const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
 
   const handleGetStarted = () => {
-    const storedKey = localStorage.getItem('google_api_key');
-    if (storedKey) {
-      setApiKey(storedKey);
-      setAppState('upload');
-    } else {
-      setAppState('apikey');
-    }
-  };
-
-  const handleApiKeySet = (key: string) => {
-    setApiKey(key);
     setAppState('upload');
   };
 
@@ -139,7 +119,7 @@ const Index = () => {
   };
 
   const handleProcessStart = async () => {
-    if (!selectedFile || !apiKey) return;
+    if (!selectedFile) return;
 
     setAppState('processing');
     setProcessingStep(1);
@@ -150,7 +130,7 @@ const Index = () => {
       setProcessingStep(2);
       setProcessingProgress(50);
       
-      const detected = await analyzeVideoWithGemini(selectedFile, apiKey);
+      const detected = await analyzeVideoWithGemini(selectedFile);
       setDetectedItems(detected);
       
       setProcessingStep(3);
@@ -168,7 +148,7 @@ const Index = () => {
       console.error('Processing error:', error);
       toast({
         title: "Processing Error",
-        description: "Failed to analyze video. Please check your API key and try again.",
+        description: "Failed to analyze video. Please try again.",
         variant: "destructive",
       });
       setAppState('upload');
@@ -205,7 +185,7 @@ const Index = () => {
 
     try {
       setProcessingProgress(50);
-      const generatedTasks = await generateTodoList(items, apiKey);
+      const generatedTasks = await generateTodoList(items);
       setTasks(generatedTasks);
       setProcessingProgress(100);
       
@@ -240,7 +220,7 @@ const Index = () => {
     if (!task || task.subtasks) return;
 
     try {
-      const subtasks = await breakdownTask(task.description, apiKey);
+      const subtasks = await breakdownTask(task.description);
       setTasks(prev => prev.map(t => 
         t.id === taskId 
           ? { ...t, subtasks }
@@ -288,27 +268,6 @@ const Index = () => {
 
       {appState !== 'hero' && (
         <div className="relative z-10 container mx-auto px-4 py-8">
-          {appState === 'apikey' && (
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
-                <Button 
-                  variant="ghost" 
-                  onClick={handleStartOver}
-                  className="mb-4"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Home
-                </Button>
-                <h1 className="text-3xl font-bold mb-4">Setup Google APIs</h1>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                  To use AI-powered room analysis, you need a Google Cloud Console API key with 
-                  Cloud Vision API and Gemini API enabled.
-                </p>
-              </div>
-              <ApiKeySetup onApiKeySet={handleApiKeySet} />
-            </div>
-          )}
-
           {appState === 'upload' && (
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">

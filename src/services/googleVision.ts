@@ -57,160 +57,150 @@ export const extractFramesFromVideo = async (videoFile: File, maxFrames: number 
   });
 };
 
-export const analyzeImageWithGemini = async (imageBlob: Blob, apiKey: string): Promise<DetectedObject[]> => {
+export const analyzeImageWithGemini = async (imageBlob: Blob): Promise<DetectedObject[]> => {
   try {
+    // Input validation
+    if (!imageBlob || imageBlob.size === 0) {
+      throw new Error('Invalid image file');
+    }
+
+    // Validate file type
+    if (!imageBlob.type.startsWith('image/')) {
+      throw new Error('File must be an image');
+    }
+
+    // Validate file size (max 10MB)
+    if (imageBlob.size > 10 * 1024 * 1024) {
+      throw new Error('Image file too large (max 10MB)');
+    }
+
     // Convert blob to base64
-    const base64 = await new Promise<string>((resolve) => {
+    const base64Data = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        resolve(result.split(',')[1]); // Remove data:image/jpeg;base64, prefix
+        // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+        const base64 = result.split(',')[1];
+        resolve(base64);
       };
+      reader.onerror = reject;
       reader.readAsDataURL(imageBlob);
     });
 
-    const prompt = `Analyze this room image and identify items that need cleaning or organizing. Focus on:
-- Clothes that are scattered, on chairs, or on floors
-- Items out of place (books, papers, dishes, etc.)
-- Surfaces that need cleaning (messy desks, unmade beds, etc.)
-- Clutter or disorganized areas
-- Personal items that should be put away
-
-For each item you identify, specify its location in the room. Return ONLY a JSON array in this exact format:
-[
-  {
-    "name": "clothes on chair",
-    "confidence": 0.95,
-    "location": "on dining chair"
-  },
-  {
-    "name": "unmade bed",
-    "confidence": 0.90,
-    "location": "bedroom"
-  }
-]
-
-Focus on actionable cleaning tasks, not just object identification. Be specific about what needs to be cleaned or organized.`;
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // Call secure Edge Function
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-image`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            {
-              text: prompt
-            },
-            {
-              inline_data: {
-                mime_type: "image/jpeg",
-                data: base64
-              }
-            }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 1000,
-        }
+        imageData: base64Data,
+        mimeType: imageBlob.type
       })
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini Vision API error: ${response.status} ${response.statusText}`);
+      throw new Error(`Analysis failed: ${response.status}`);
     }
 
-    const data = await response.json();
-    const content = data.candidates[0].content.parts[0].text;
-    
-    // Extract JSON from the response
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON found in Gemini response');
-    }
+    const { detectedObjects } = await response.json();
 
-    const detectedItems = JSON.parse(jsonMatch[0]);
-    
-    // Convert to our format with IDs
-    return detectedItems.map((item: any, index: number) => ({
-      id: `gemini_${index}`,
-      name: item.name,
-      confidence: item.confidence || 0.8,
-      location: item.location
+    // Validate and format the response
+    return detectedObjects.map((obj: any, index: number) => ({
+      id: obj.id || `item_${index}`,
+      name: obj.name || 'Unknown item',
+      confidence: Math.min(Math.max(obj.confidence || 0.5, 0), 1),
+      location: obj.location
     }));
 
   } catch (error) {
-    console.error('Gemini Vision API error:', error);
-    throw error;
+    console.error('Error analyzing image:', error);
+    throw new Error('Failed to analyze image');
   }
 };
 
-export const analyzeVideoWithGemini = async (videoFile: File, apiKey: string): Promise<DetectedObject[]> => {
+export const analyzeVideoWithGemini = async (videoFile: File): Promise<DetectedObject[]> => {
   try {
-    const frames = await extractFramesFromVideo(videoFile, 3);
-    const allDetections: DetectedObject[] = [];
-    
-    // Analyze each frame with Gemini
-    for (let i = 0; i < frames.length; i++) {
-      const frameDetections = await analyzeImageWithGemini(frames[i], apiKey);
-      allDetections.push(...frameDetections);
+    // Input validation
+    if (!videoFile || videoFile.size === 0) {
+      throw new Error('Invalid video file');
     }
+
+    // Validate file type
+    if (!videoFile.type.startsWith('video/')) {
+      throw new Error('File must be a video');
+    }
+
+    // Validate file size (max 50MB)
+    if (videoFile.size > 50 * 1024 * 1024) {
+      throw new Error('Video file too large (max 50MB)');
+    }
+
+    // Validate duration (max 60 seconds)
+    const duration = await getVideoDuration(videoFile);
+    if (duration > 60) {
+      throw new Error('Video must be 60 seconds or less');
+    }
+
+    console.log('Starting video analysis...');
     
-    // Deduplicate and merge similar items
-    const uniqueItems = new Map<string, DetectedObject>();
+    // Extract frames from video
+    const frames = await extractFramesFromVideo(videoFile, 3); // Reduce to 3 frames for better performance
+    console.log(`Extracted ${frames.length} frames from video`);
+
+    // Analyze each frame
+    const allDetections: DetectedObject[][] = [];
+    for (let i = 0; i < frames.length; i++) {
+      console.log(`Analyzing frame ${i + 1}/${frames.length}...`);
+      const detections = await analyzeImageWithGemini(frames[i]);
+      allDetections.push(detections);
+    }
+
+    // Merge and deduplicate detections
+    const mergedDetections = new Map<string, DetectedObject>();
     
-    allDetections.forEach(item => {
-      const normalizedName = item.name.toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+    allDetections.flat().forEach(detection => {
+      const key = detection.name.toLowerCase().trim();
+      const existing = mergedDetections.get(key);
       
-      // Check for similar items by comparing normalized names
-      let foundSimilar = false;
-      for (const [existingKey, existingItem] of uniqueItems.entries()) {
-        const existingNormalized = existingItem.name.toLowerCase()
-          .replace(/[^a-z0-9\s]/g, '')
-          .replace(/\s+/g, ' ')
-          .trim();
-        
-        // Check similarity - if 70% of words match, consider them similar
-        const itemWords = normalizedName.split(' ');
-        const existingWords = existingNormalized.split(' ');
-        const commonWords = itemWords.filter(word => existingWords.includes(word));
-        const similarity = commonWords.length / Math.max(itemWords.length, existingWords.length);
-        
-        if (similarity > 0.7) {
-          // Merge with existing item if this one has higher confidence
-          if (item.confidence > existingItem.confidence) {
-            uniqueItems.set(existingKey, {
-              ...item,
-              id: existingItem.id,
-              // Keep the more specific name (usually longer)
-              name: item.name.length > existingItem.name.length ? item.name : existingItem.name
-            });
-          }
-          foundSimilar = true;
-          break;
-        }
-      }
-      
-      // If no similar item found, add as new
-      if (!foundSimilar) {
-        const key = normalizedName.replace(/\s+/g, '_');
-        uniqueItems.set(key, {
-          ...item,
-          id: `merged_${key}`
+      if (!existing || detection.confidence > existing.confidence) {
+        mergedDetections.set(key, {
+          ...detection,
+          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          confidence: Math.max(existing?.confidence || 0, detection.confidence)
         });
       }
     });
-    
-    return Array.from(uniqueItems.values())
+
+    // Sort by confidence and return top 10 items
+    const sortedDetections = Array.from(mergedDetections.values())
       .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, 12); // Limit to top 12 most confident cleaning tasks
+      .slice(0, 10);
+
+    console.log(`Found ${sortedDetections.length} unique cleaning tasks`);
+    return sortedDetections;
+
   } catch (error) {
-    console.error('Video analysis error:', error);
-    throw error;
+    console.error('Error analyzing video:', error);
+    throw new Error('Failed to analyze video');
   }
 };
+
+// Helper function to get video duration
+function getVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    
+    video.onloadedmetadata = () => {
+      resolve(video.duration);
+    };
+    
+    video.onerror = () => {
+      reject(new Error('Failed to load video metadata'));
+    };
+    
+    video.src = URL.createObjectURL(file);
+  });
+}
