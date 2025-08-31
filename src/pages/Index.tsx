@@ -105,6 +105,13 @@ const Index = () => {
   const [detectedItems, setDetectedItems] = useState<DetectedItem[]>([]);
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const { toast } = useToast();
+
+  // Set the provided API key on app load
+  React.useEffect(() => {
+    const providedKey = 'AIzaSyDLk4UzQTCaiD_b4cFQt-dQWCzeAb1dUhY';
+    localStorage.setItem('google_api_key', providedKey);
+    setApiKey(providedKey);
+  }, []);
   
   const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
 
