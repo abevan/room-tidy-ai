@@ -46,6 +46,7 @@ export const TodoList: React.FC<TodoListProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [guidanceSteps, setGuidanceSteps] = useState<string[]>([]);
+  const [audioLoading, setAudioLoading] = useState(false);
   
   const completedTasks = tasks.filter(task => task.completed).length;
   const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
@@ -66,7 +67,9 @@ export const TodoList: React.FC<TodoListProps> = ({
       setCurrentStep(0);
     }
     
+    setAudioLoading(true);
     await playAllSteps();
+    setAudioLoading(false);
   };
 
   const playAllSteps = async () => {
@@ -74,11 +77,13 @@ export const TodoList: React.FC<TodoListProps> = ({
       setCurrentStep(i);
       setIsPlaying(true);
       try {
+        console.log(`🎵 Playing step ${i + 1}:`, guidanceSteps[i].substring(0, 50) + '...');
         await speakText(guidanceSteps[i]);
+        console.log(`🎵 Completed step ${i + 1}`);
         // Small pause between steps
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
-        console.error('Speech error:', error);
+        console.error('Speech error at step', i + 1, ':', error);
         break;
       }
     }
@@ -179,9 +184,17 @@ export const TodoList: React.FC<TodoListProps> = ({
           
           <div className="text-center">
             <h3 className="text-xl font-bold mb-2">🎯 AI Cleaning Coach</h3>
-            <p className="text-base text-muted-foreground">
-              Click the mascot to get step-by-step guidance through your cleaning tasks!
+            <p className="text-base text-muted-foreground mb-4">
+              {audioLoading 
+                ? "🎵 Generating your personalized audio guidance..."
+                : "Click the mascot to get step-by-step guidance through your cleaning tasks!"
+              }
             </p>
+            {audioLoading && (
+              <div className="text-sm text-primary animate-pulse">
+                Please wait while we prepare your cleaning guidance...
+              </div>
+            )}
           </div>
           
           {/* Calendar Export Button */}
@@ -217,21 +230,6 @@ export const TodoList: React.FC<TodoListProps> = ({
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-start gap-3 flex-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onTaskToggle(task.id)}
-                    className={cn(
-                      "mt-0.5 transition-all duration-200",
-                      task.completed ? "text-success" : "text-muted-foreground hover:text-primary"
-                    )}
-                  >
-                    <CheckCircle2 className={cn(
-                      "w-5 h-5",
-                      task.completed ? "fill-current" : ""
-                    )} />
-                  </Button>
-                  
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <p className={cn(
@@ -251,7 +249,7 @@ export const TodoList: React.FC<TodoListProps> = ({
                         <span>{task.timeEstimate} min</span>
                       </div>
                       
-                      {task.subtasks && (
+                      {task.subtasks && task.subtasks.length > 0 && (
                         <div className="flex items-center gap-1">
                           <span>{task.subtasks.filter(st => st.completed).length}/{task.subtasks.length} subtasks</span>
                         </div>
@@ -274,7 +272,7 @@ export const TodoList: React.FC<TodoListProps> = ({
                     {task.completed ? "Completed" : "Complete"}
                   </Button>
                   
-                  {task.subtasks && (
+                  {task.subtasks && task.subtasks.length > 0 && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -291,7 +289,7 @@ export const TodoList: React.FC<TodoListProps> = ({
               </div>
               
               {/* Subtasks */}
-              {task.subtasks && expandedTasks.has(task.id) && (
+              {task.subtasks && task.subtasks.length > 0 && expandedTasks.has(task.id) && (
                 <div className="mt-4 ml-8 space-y-2 border-l-2 border-border pl-4">
                   {task.subtasks.map((subtask) => (
                     <div key={subtask.id} className="flex items-center gap-3">

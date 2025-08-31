@@ -100,7 +100,7 @@ export const speakText = async (text: string, voiceId: string = '9BWtsMINqrJLrRa
         throw new Error(`TTS failed: ${response.status} - ${errorText}`);
       }
 
-      // Check if response is audio
+      // The response should be audio/mpeg directly
       const contentType = response.headers.get('content-type');
       console.log('🎵 Content type:', contentType);
       
@@ -108,6 +108,10 @@ export const speakText = async (text: string, voiceId: string = '9BWtsMINqrJLrRa
         const errorData = await response.json();
         console.error('🎵 TTS returned JSON error:', errorData);
         throw new Error('TTS service returned error: ' + JSON.stringify(errorData));
+      }
+
+      if (!contentType?.includes('audio')) {
+        throw new Error('Invalid response type: expected audio, got ' + contentType);
       }
 
       const audioBlob = await response.blob();
