@@ -73,6 +73,8 @@ CRITICAL: Avoid creating duplicate or similar tasks. If multiple items suggest t
 
 Create tasks in logical order for maximum efficiency - start with tasks that clear space, then deep cleaning, then organizing. Combine similar actions into single tasks when possible.
 
+Each task should be broken down into 3-5 detailed substeps that are perfect for voice coaching guidance. The substeps should be specific enough that a personal cleaning coach could walk someone through each one with encouragement and tips.
+
 Return a JSON array of tasks with this structure:
 {
   "id": "unique_id",

@@ -28,41 +28,47 @@ export const generateCleaningMotivation = (tasks: Task[], totalTime: number): st
   return `Hey there! I've analyzed your space and found ${categoryText} that could use some attention. If we tackle these ${itemCount} tasks together, it should take ${timeText}. The great news is that we can make a huge visual impact pretty quickly! Ready to transform your space? Let's start with the most impactful tasks first!`;
 };
 
-export const generateStepByStepGuidance = (tasks: Task[]): string[] => {
-  const guidance: string[] = [];
+export const generateStepByStepGuidance = async (taskDescription: string, subtasks?: any[]): Promise<string[]> => {
+  if (subtasks && subtasks.length > 0) {
+    // Use existing subtasks and enhance them with coaching language
+    return subtasks.map((subtask, index) => {
+      const stepNumber = index + 1;
+      const isFirst = index === 0;
+      const isLast = index === subtasks.length - 1;
+      
+      let coaching = "";
+      if (isFirst) {
+        coaching = `Alright my friend, let's tackle this together! We're going to ${taskDescription.toLowerCase()}, and I know you've got this. `;
+      } else if (isLast) {
+        coaching = `This is it - the home stretch! You're absolutely crushing this. `;
+      } else {
+        coaching = `You're doing fantastic! Keep that momentum going. `;
+      }
+      
+      const encouragement = [
+        "I believe in you completely!",
+        "You're stronger than you think!",
+        "Every small step is progress!",
+        "Look at you being productive!",
+        "You're building amazing habits!",
+        "I'm so proud of your effort!"
+      ];
+      
+      const randomEncouragement = encouragement[Math.floor(Math.random() * encouragement.length)];
+      
+      return `${coaching}Step ${stepNumber}: ${subtask.description}. Take your time with this - there's no rush. Remember, ${randomEncouragement} When you're ready to move on, just hit the next button and we'll tackle the next part together.`;
+    });
+  }
   
-  // Initial motivation
-  const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
-  guidance.push(generateCleaningMotivation(tasks, totalTime));
+  // Fallback for tasks without subtasks
+  const steps = [
+    `Hey there, my motivated friend! Let's get this done together. We're going to ${taskDescription.toLowerCase()}, and I know it might feel overwhelming, but we'll break it down into bite-sized pieces. I'm here to cheer you on every step of the way! First, let's gather everything we need and take a deep breath. You've got this, and I've got your back!`,
+    `Look at you go! You're already making progress. Now let's tackle the main part of this task. Don't worry about being perfect - we're going for progress, not perfection. Take your time, be kind to yourself, and remember that every small action is building toward your goal. I believe in you completely!`,
+    `You are absolutely crushing this! I can feel your momentum building. Now we're going to add those finishing touches that make all the difference. This is where the magic happens - you're transforming your space and proving to yourself just how capable you are. Keep going, you beautiful, productive human!`,
+    `WOW! Look what you've accomplished! Take a moment to really appreciate what you've done here. You didn't just complete a task - you showed up for yourself, you pushed through any resistance, and you made your space better. That's the kind of person you are, and I'm genuinely proud of you. Give yourself a pat on the back - you've earned it!`
+  ];
   
-  // Step-by-step guidance for each task
-  tasks.forEach((task, index) => {
-    const stepNumber = index + 1;
-    const isLast = index === tasks.length - 1;
-    
-    let message = `Step ${stepNumber}: Let's ${task.description.toLowerCase()}. `;
-    
-    if (task.timeEstimate <= 5) {
-      message += "This should be quick - just a few minutes! ";
-    } else if (task.timeEstimate <= 10) {
-      message += "This will take about 10 minutes, but you've got this! ";
-    } else {
-      message += `This might take around ${task.timeEstimate} minutes, but take your time. `;
-    }
-    
-    message += "Focus on one area at a time, and remember - progress over perfection!";
-    
-    if (isLast) {
-      message += " You're almost done - this is the final step!";
-    }
-    
-    guidance.push(message);
-  });
-  
-  // Completion message
-  guidance.push("Congratulations! You've completed your cleaning plan. Your space looks amazing and you should feel proud of what you've accomplished!");
-  
-  return guidance;
+  return steps;
 };
 
 export const speakText = (text: string, volume: number = 0.8): Promise<void> => {

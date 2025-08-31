@@ -7,7 +7,7 @@ import { CheckCircle2, Clock, ChevronDown, ChevronRight, Play } from 'lucide-rea
 import { cn } from '@/lib/utils';
 import { AIMascot } from '@/components/AIMascot';
 import { AudioControls } from '@/components/AudioControls';
-import { generateStepByStepGuidance, speakText, stopSpeaking, pauseSpeaking, resumeSpeaking } from '@/services/voiceService';
+import { generateStepByStepGuidance, generateCleaningMotivation, speakText, stopSpeaking, pauseSpeaking, resumeSpeaking } from '@/services/voiceService';
 import { exportToCalendar } from '@/utils/calendarExport';
 import { Download } from 'lucide-react';
 
@@ -56,10 +56,10 @@ export const TodoList: React.FC<TodoListProps> = ({
 
   React.useEffect(() => {
     if (tasks.length > 0 && guidanceSteps.length === 0) {
-      const steps = generateStepByStepGuidance(tasks);
-      setGuidanceSteps(steps);
+      const steps = generateCleaningMotivation(tasks, totalTime);
+      setGuidanceSteps([steps]);
     }
-  }, [tasks]);
+  }, [tasks, totalTime]);
 
   const handlePlayGuidance = async () => {
     if (!showAudioControls) {
@@ -106,18 +106,37 @@ export const TodoList: React.FC<TodoListProps> = ({
     setCurrentStep(0);
   };
 
-  const handleStepChange = async (step: number) => {
-    stopSpeaking();
-    setCurrentStep(step);
-    setIsPlaying(true);
-    
+  const handleGenerateGuidance = async (task: Task) => {
+    setAudioLoading(true);
     try {
-      await speakText(guidanceSteps[step]);
-      setIsPlaying(false);
+      const steps = await generateStepByStepGuidance(task.description, task.subtasks);
+      setGuidanceSteps(steps);
+      setCurrentStep(0);
+      setShowAudioControls(true);
     } catch (error) {
-      console.error('Speech error:', error);
-      setIsPlaying(false);
+      console.error('Error generating guidance:', error);
+    } finally {
+      setAudioLoading(false);
     }
+  };
+
+  const handlePlayStep = async (stepIndex: number) => {
+    if (stepIndex < guidanceSteps.length) {
+      setCurrentStep(stepIndex);
+      setIsPlaying(true);
+      try {
+        await speakText(guidanceSteps[stepIndex]);
+        setIsPlaying(false);
+        // Don't auto-advance - let user control when to move to next step
+      } catch (error) {
+        console.error('Error playing audio:', error);
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  const handleStepChange = async (step: number) => {
+    await handlePlayStep(step);
   };
 
   const toggleExpand = (taskId: string) => {
@@ -132,9 +151,10 @@ export const TodoList: React.FC<TodoListProps> = ({
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      'Clothing': 'bg-blue-100 text-blue-800',
-      'Surface': 'bg-green-100 text-green-800',
-      'Items': 'bg-purple-100 text-purple-800',
+      'Kitchen': 'bg-blue-100 text-blue-800',
+      'Bathroom': 'bg-green-100 text-green-800', 
+      'Living Room': 'bg-purple-100 text-purple-800',
+      'Bedroom': 'bg-pink-100 text-pink-800',
       'General': 'bg-gray-100 text-gray-800',
     };
     return colors[category as keyof typeof colors] || colors.General;
@@ -258,6 +278,17 @@ export const TodoList: React.FC<TodoListProps> = ({
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGenerateGuidance(task)}
+                    disabled={audioLoading}
+                    className="opacity-80 hover:opacity-100"
+                  >
+                    <Play className="w-4 h-4 mr-1" />
+                    {audioLoading ? "Loading..." : "Coach Me"}
+                  </Button>
+                  
                   <Button
                     variant={task.completed ? "secondary" : "default"}
                     size="sm"
