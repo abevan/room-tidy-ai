@@ -121,16 +121,20 @@ const Index = () => {
   const handleProcessStart = async () => {
     if (!selectedFile) return;
 
+    console.log('Starting analysis process...');
     setAppState('processing');
     setProcessingStep(1);
     setProcessingProgress(25);
 
     try {
       // Step 1: Extract frames and analyze
+      console.log('Moving to step 2 - frame extraction');
       setProcessingStep(2);
       setProcessingProgress(50);
       
+      console.log('Calling analyzeVideoWithGemini with file:', selectedFile.name, selectedFile.size, selectedFile.type);
       const detected = await analyzeVideoWithGemini(selectedFile);
+      console.log('Analysis complete, detected items:', detected);
       setDetectedItems(detected);
       
       setProcessingStep(3);
@@ -148,7 +152,7 @@ const Index = () => {
       console.error('Processing error:', error);
       toast({
         title: "Processing Error",
-        description: "Failed to analyze video. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to analyze video. Please try again.",
         variant: "destructive",
       });
       setAppState('upload');
@@ -272,7 +276,7 @@ const Index = () => {
                 </Button>
                 <h1 className="text-4xl font-bold mb-4 text-primary">📹 Upload Your Room Video</h1>
                 <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-                  Record a short video of your room (30-60 seconds) showing the areas that need cleaning. 
+                  Record a short video of your room (0-60 seconds) showing the areas that need cleaning. 
                   Our AI will analyze it and create a personalized cleanup plan!
                 </p>
               </div>
