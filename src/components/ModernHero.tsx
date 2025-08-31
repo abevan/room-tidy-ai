@@ -9,24 +9,24 @@ interface ModernHeroProps {
 
 export const ModernHero: React.FC<ModernHeroProps> = ({ onGetStarted }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-6 py-12">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6 py-12">
       <div className="relative z-10 text-center max-w-lg mx-auto">
         <div className="space-y-8">
           {/* AI Mascot */}
           <div className="flex justify-center mb-8">
-            <div className="transform hover:scale-105 transition-transform duration-300">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 backdrop-blur-sm border border-primary/20 flex items-center justify-center transform hover:scale-105 transition-transform duration-300">
               <AIMascot />
             </div>
           </div>
           
           {/* Title & Tagline */}
           <div className="space-y-6">
-          <h1 className="text-5xl sm:text-6xl font-black text-white leading-tight tracking-tight">
-            Room Tidy AI
-          </h1>
-          <p className="text-xl sm:text-2xl text-white/80 font-medium leading-relaxed max-w-2xl mx-auto">
-            AI-powered cleaning assistant that guides you step-by-step through smart organization
-          </p>
+            <h1 className="text-5xl sm:text-6xl font-black bg-gradient-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent leading-tight tracking-tight">
+              Room Tidy AI
+            </h1>
+            <p className="text-xl sm:text-2xl text-muted-foreground font-medium leading-relaxed max-w-2xl mx-auto">
+              AI-powered cleaning assistant that guides you step-by-step
+            </p>
           </div>
 
           {/* CTA Button */}
@@ -34,37 +34,28 @@ export const ModernHero: React.FC<ModernHeroProps> = ({ onGetStarted }) => {
             <Button 
               onClick={onGetStarted}
               size="lg"
-              className="glass-morphism btn-haptic hover:shadow-glow text-white font-semibold px-16 py-6 text-xl transition-all duration-300 rounded-2xl border-white/20 hover:bg-gradient-primary"
+              className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white font-semibold px-16 py-6 text-xl transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl border-0"
             >
               <Upload className="mr-4 w-6 h-6" />
               Get Started
             </Button>
           </div>
+        </div>
+      </div>
 
-          {/* Feature Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-12">
-            <div className="glass-morphism-light rounded-2xl p-6 text-center card-tilt animate-breathe">
-              <div className="w-12 h-12 bg-gradient-primary rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-glow">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <p className="font-semibold text-white mb-2">AI Analysis</p>
-              <p className="text-sm text-white/70">Smart room detection</p>
-            </div>
-            <div className="glass-morphism-light rounded-2xl p-6 text-center card-tilt animate-breathe" style={{ animationDelay: '1s' }}>
-              <div className="w-12 h-12 bg-gradient-to-br from-success to-primary rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-glow">
-                <Upload className="w-6 h-6 text-white" />
-              </div>
-              <p className="font-semibold text-white mb-2">Voice Guide</p>
-              <p className="text-sm text-white/70">Step-by-step coaching</p>
-            </div>
-            <div className="glass-morphism-light rounded-2xl p-6 text-center card-tilt animate-breathe" style={{ animationDelay: '2s' }}>
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-success rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-glow">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <p className="font-semibold text-white mb-2">Smart Planning</p>
-              <p className="text-sm text-white/70">Optimized workflows</p>
-            </div>
-          </div>
+      {/* Feature Points */}
+      <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 space-y-6">
+        <div className="flex flex-col items-center space-y-2">
+          <div className="w-3 h-3 rounded-full bg-primary"></div>
+          <p className="text-muted-foreground font-medium">AI Analysis</p>
+        </div>
+        <div className="flex flex-col items-center space-y-2">
+          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+          <p className="text-muted-foreground font-medium">Voice Guide</p>
+        </div>
+        <div className="flex flex-col items-center space-y-2">
+          <div className="w-3 h-3 rounded-full bg-primary"></div>
+          <p className="text-muted-foreground font-medium">Smart Planning</p>
         </div>
       </div>
     </div>

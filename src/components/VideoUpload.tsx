@@ -327,18 +327,18 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
       ) : !selectedFile ? (
         <div className="space-y-6">
           {/* Camera Option */}
-          <Card className="p-8 text-center border-2 border-dashed border-primary/30 bg-gradient-card hover:shadow-medium transition-all">
+          <Card className="p-8 text-center border-2 border-dashed border-primary/30 bg-white/90 backdrop-blur-sm hover:shadow-lg transition-all">
             <Camera className="w-16 h-16 mx-auto mb-4 text-primary" />
-            <h3 className="text-xl font-semibold mb-2">📹 Record with Camera</h3>
+            <h3 className="text-xl font-semibold mb-2">Record with Camera</h3>
             <p className="text-muted-foreground mb-6">
-              Record a quick video of your room (0-60 seconds)
+              Record a quick video of your room (up to 1 minute)
             </p>
             <Button 
               onClick={startCamera}
               size="lg"
-              className="shadow-medium hover:shadow-strong px-8 py-3"
+              className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 text-white px-8 py-3 rounded-2xl"
             >
-              Start Camera
+              Start Recording
             </Button>
           </Card>
 
@@ -357,9 +357,9 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
           {/* Upload Option */}
           <Card
             className={cn(
-              "relative border-2 border-dashed transition-all duration-300 cursor-pointer hover:shadow-medium",
+              "relative border-2 border-dashed transition-all duration-300 cursor-pointer bg-white/90 backdrop-blur-sm hover:shadow-lg",
               dragOver
-                ? "border-primary bg-gradient-hero scale-105"
+                ? "border-primary bg-primary/5 scale-105"
                 : "border-border hover:border-primary/50"
             )}
             onDragOver={handleDragOver}
@@ -373,7 +373,7 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
                 onChange={handleFileInput}
                 className="hidden"
               />
-              <Upload className="w-12 h-12 mx-auto mb-4 text-primary opacity-80" />
+              <Upload className="w-12 h-12 mx-auto mb-4 text-primary" />
               <h3 className="text-lg font-semibold mb-2">Upload Video File</h3>
               <p className="text-muted-foreground mb-4">
                 Drag and drop your room video here, or click to browse

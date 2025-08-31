@@ -253,7 +253,7 @@ const Index = () => {
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   Back to Home
                 </Button>
-                <h1 className="text-4xl font-bold mb-4 text-primary">📹 Upload Your Room Video</h1>
+                <h1 className="text-4xl font-bold mb-4 text-foreground">Upload Your Room Video</h1>
                 <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
                   Record a short video of your room (0-60 seconds) showing the areas that need cleaning. 
                   Our AI will analyze it and create a personalized cleanup plan!

@@ -4,130 +4,105 @@
 
 @layer base {
   :root {
-    /* Apple-inspired Design System */
+    /* Light Theme Base Colors */
     --background: 0 0% 100%;
-    --foreground: 0 0% 11%; /* Deep space gray */
-    --card: 0 0% 100% / 0.8; /* Frosted glass effect */
-    --card-foreground: 0 0% 11%;
-    --popover: 0 0% 100% / 0.95;
-    --popover-foreground: 0 0% 11%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
     
-    /* Apple Electric Blue */
-    --primary: 211 100% 50%; /* #007AFF */
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 211 100% 45%;
-    --primary-glow: 211 100% 50%;
+    /* Purple Primary */
+    --primary: 252 100% 70%;     /* Purple #8B5CF6 */
+    --primary-foreground: 0 0% 98%;
+    --primary-hover: 252 100% 65%;
+    --primary-glow: 252 100% 70%;
     
-    /* Apple Mint Green */
-    --success: 142 84% 52%; /* #30D158 */
+    /* Blue Secondary */
+    --success: 222 84% 55%;      /* Blue #3B82F6 */
     --success-foreground: 0 0% 100%;
     
-    /* Premium Grays */
-    --secondary: 0 0% 96%; /* Light gray */
-    --secondary-foreground: 0 0% 20%;
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 211 100% 97%;
-    --accent-foreground: 0 0% 11%;
+    /* Light Theme Colors */
+    --secondary: 210 40% 98%;    /* Very light gray */
+    --secondary-foreground: 222 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 84% 4.9%;
     
     /* System colors */
-    --destructive: 0 100% 67%; /* Apple Red */
-    --destructive-foreground: 0 0% 100%;
-    --warning: 35 100% 50%; /* Apple Orange */
-    --warning-foreground: 0 0% 100%;
-    
-    /* Borders & inputs with glass morphism */
-    --border: 0 0% 90% / 0.2;
-    --input: 0 0% 100% / 0.1;
-    --ring: 211 100% 50%;
-    
-    /* Apple-style radius */
-    --radius: 1rem; /* 16px rounded corners */
-    
-    /* Apple-inspired Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(211, 100%, 50%), hsl(211, 100%, 60%));
-    --gradient-hero: linear-gradient(135deg, hsl(0, 0%, 11%) 0%, hsl(0, 0%, 100%) 100%); /* Deep space gray to white */
-    --gradient-card: linear-gradient(135deg, hsl(0, 0%, 100% / 0.25), hsl(0, 0%, 100% / 0.1)); /* Glass morphism */
-    --gradient-glass: linear-gradient(135deg, hsl(0, 0%, 100% / 0.25), hsl(0, 0%, 100% / 0.05));
-    
-    /* Apple-style Shadows with depth */
-    --shadow-glass: 0 8px 32px 0 hsl(0, 0%, 0% / 0.1);
-    --shadow-soft: 0 1px 3px 0 hsl(0, 0%, 0% / 0.1), 0 1px 2px 0 hsl(0, 0%, 0% / 0.06);
-    --shadow-medium: 0 4px 6px -1px hsl(0, 0%, 0% / 0.1), 0 2px 4px -1px hsl(0, 0%, 0% / 0.06);
-    --shadow-strong: 0 25px 50px -12px hsl(0, 0%, 0% / 0.25);
-    --shadow-glow: 0 0 40px hsl(211, 100%, 50% / 0.3);
-    
-    /* Apple-style Transitions with elastic easing */
-    --transition-elastic: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    --transition-smooth: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    --transition-snappy: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    
-    /* Backdrop blur for glass morphism */
-    --backdrop-blur: blur(20px);
-    --backdrop-blur-light: blur(10px);
-    
-    /* Sidebar */
-    --sidebar-background: 0 0% 98% / 0.8;
-    --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 211 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 96% / 0.5;
-    --sidebar-accent-foreground: 0 0% 11%;
-    --sidebar-border: 0 0% 90% / 0.2;
-    --sidebar-ring: 211 100% 50%;
-  }
-
-  .dark {
-    /* Dark mode with deep space aesthetics */
-    --background: 0 0% 11%; /* Deep space gray */
-    --foreground: 0 0% 98%;
-    --card: 0 0% 15% / 0.8; /* Dark glass */
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 15% / 0.95;
-    --popover-foreground: 0 0% 98%;
-    
-    --primary: 211 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 211 100% 55%;
-    --primary-glow: 211 100% 50%;
-    
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 18%;
-    --muted-foreground: 0 0% 65%;
-    --accent: 211 100% 15%;
-    --accent-foreground: 0 0% 98%;
-    
-    --destructive: 0 100% 67%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 142 84% 52%;
-    --success-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
     --warning: 35 100% 50%;
     --warning-foreground: 0 0% 100%;
     
-    --border: 0 0% 30% / 0.2;
-    --input: 0 0% 15% / 0.5;
-    --ring: 211 100% 50%;
+    /* Borders & inputs */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 252 100% 70%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(211, 100%, 50%), hsl(211, 100%, 60%));
-    --gradient-hero: linear-gradient(135deg, hsl(0, 0%, 11%) 0%, hsl(0, 0%, 25%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(0, 0%, 15% / 0.4), hsl(0, 0%, 10% / 0.2));
-    --gradient-glass: linear-gradient(135deg, hsl(0, 0%, 20% / 0.3), hsl(0, 0%, 10% / 0.1));
+    /* Border radius */
+    --radius: 0.75rem; /* 12px rounded corners */
     
-    --shadow-glass: 0 8px 32px 0 hsl(0, 0%, 0% / 0.3);
-    --shadow-soft: 0 1px 3px 0 hsl(0 0% 0% / 0.35), 0 1px 2px 0 hsl(0 0% 0% / 0.25);
-    --shadow-medium: 0 4px 6px -1px hsl(0 0% 0% / 0.25), 0 2px 4px -1px hsl(0 0% 0% / 0.15);
-    --shadow-strong: 0 25px 50px -12px hsl(0, 0%, 0% / 0.4);
-    --shadow-glow: 0 0 40px hsl(211, 100%, 50% / 0.4);
+    /* Light Theme Gradients */
+    --gradient-primary: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    --gradient-hero: linear-gradient(135deg, 
+      #f3e8ff 0%,      /* Light purple */
+      #e0e7ff 50%,     /* Light blue */  
+      #f0f9ff 100%     /* Very light blue */
+    );
+    --gradient-card: hsl(0 0% 100% / 0.9);
+    --gradient-glass: linear-gradient(135deg, hsl(0, 0%, 100% / 0.8), hsl(0, 0%, 100% / 0.4));
     
-    --sidebar-background: 0 0% 15% / 0.8;
-    --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 211 100% 50%;
+    /* Light Shadows */
+    --shadow-glass: 0 8px 32px 0 hsl(0, 0%, 0% / 0.05);
+    --shadow-soft: 0 1px 3px 0 hsl(0, 0%, 0% / 0.1), 0 1px 2px 0 hsl(0, 0%, 0% / 0.06);
+    --shadow-medium: 0 4px 6px -1px hsl(0, 0%, 0% / 0.1), 0 2px 4px -1px hsl(0, 0%, 0% / 0.06);
+    --shadow-strong: 0 10px 15px -3px hsl(0, 0%, 0% / 0.1), 0 4px 6px -2px hsl(0, 0%, 0% / 0.05);
+    --shadow-glow: 0 0 20px hsl(252, 100%, 70% / 0.3);
+    
+    /* Smooth Transitions */
+    --transition-elastic: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-smooth: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --transition-snappy: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    /* Backdrop blur for light theme */
+    --backdrop-blur: blur(8px);
+    --backdrop-blur-light: blur(4px);
+    
+    /* Sidebar */
+    --sidebar-background: 0 0% 98% / 0.8;
+    --sidebar-foreground: 222 84% 4.9%;
+    --sidebar-primary: 252 100% 70%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 20% / 0.5;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 0% 30% / 0.2;
-    --sidebar-ring: 211 100% 50%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 84% 4.9%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 252 100% 70%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 252 100% 70%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 252 100% 70%;
+    --success: 222 84% 55%;
+    --success-foreground: 0 0% 100%;
   }
 }
 
@@ -138,10 +113,8 @@
   
   body {
     @apply bg-gradient-hero text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     font-feature-settings: 'cv11', 'ss01';
-    font-variation-settings: 'opsz' 32;
-    font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
