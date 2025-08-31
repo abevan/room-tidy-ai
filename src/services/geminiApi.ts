@@ -47,14 +47,19 @@ export const generateTodoList = async (items: DetectedItem[]): Promise<Task[]> =
 
     const { tasks } = await response.json();
 
-    // Validate and format tasks
+    // Validate and format tasks (preserve subtasks from edge function)
     return tasks.map((task: any, index: number) => ({
       id: task.id || `task_${index}`,
       description: task.description || 'Unknown task',
-      timeEstimate: Math.max(task.estimatedTime || task.timeEstimate || 5, 1),
+      timeEstimate: Math.max(task.timeEstimate || task.estimatedTime || 5, 1),
       completed: false,
       category: task.category || 'General',
-      subtasks: []
+      subtasks: task.subtasks ? task.subtasks.map((subtask: any, subIndex: number) => ({
+        id: subtask.id || `subtask_${index}_${subIndex}`,
+        description: subtask.description || 'Unknown subtask',
+        timeEstimate: Math.max(subtask.timeEstimate || subtask.estimatedTime || 2, 1),
+        completed: false
+      })) : []
     }));
 
   } catch (error) {
@@ -96,7 +101,7 @@ export const breakdownTask = async (taskDescription: string): Promise<Subtask[]>
     return subtasks.map((subtask: any, index: number) => ({
       id: subtask.id || `subtask_${index}`,
       description: subtask.description || 'Unknown subtask',
-      timeEstimate: Math.max(subtask.estimatedTime || subtask.timeEstimate || 2, 1),
+      timeEstimate: Math.max(subtask.timeEstimate || subtask.estimatedTime || 2, 1),
       completed: false
     }));
 

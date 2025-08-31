@@ -177,21 +177,11 @@ const Index = () => {
       setProcessingProgress(30);
       const generatedTasks = await generateTodoList(items);
       
-      setProcessingProgress(60);
-      // Auto-breakdown all tasks
-      const tasksWithSubtasks = await Promise.all(
-        generatedTasks.map(async (task) => {
-          try {
-            const subtasks = await breakdownTask(task.description);
-            return { ...task, subtasks };
-          } catch (error) {
-            console.error(`Failed to breakdown task: ${task.description}`, error);
-            return task; // Return original task if breakdown fails
-          }
-        })
-      );
+      setProcessingProgress(80);
       
-      setTasks(tasksWithSubtasks);
+      // Edge function already generates sophisticated subtasks, so we use them directly
+      console.log('Generated tasks with intelligent subtasks:', generatedTasks);
+      setTasks(generatedTasks);
       setProcessingProgress(100);
       
       setTimeout(() => {
