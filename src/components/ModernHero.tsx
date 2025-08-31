@@ -9,7 +9,7 @@ interface ModernHeroProps {
 
 export const ModernHero: React.FC<ModernHeroProps> = ({ onGetStarted }) => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6 py-12">
+    <div className="h-[calc(100vh-80px)] flex flex-col items-center justify-center relative overflow-hidden px-6 py-12">
       <div className="relative z-10 text-center max-w-lg mx-auto">
         <div className="space-y-8">
           {/* AI Mascot */}

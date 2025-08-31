@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ModernHero } from '@/components/ModernHero';
 import { VideoUpload } from '@/components/VideoUpload';
 import { ProcessingState } from '@/components/ProcessingState';
-import { DetectionReview } from '@/components/DetectionReview';
+
 import { TodoList } from '@/components/TodoList';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { Button } from '@/components/ui/button';
@@ -52,7 +52,7 @@ interface Subtask {
   completed: boolean;
 }
 
-type AppState = 'hero' | 'upload' | 'processing' | 'detection' | 'generating' | 'results';
+type AppState = 'hero' | 'upload' | 'processing' | 'generating' | 'results';
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -126,12 +126,12 @@ const Index = () => {
       setProcessingStep(3);
       setProcessingProgress(75);
       
-      // Step 2: Complete processing
+      // Step 2: Complete processing and go straight to generating
       setProcessingStep(4);
       setProcessingProgress(100);
       
       setTimeout(() => {
-        setAppState('detection');
+        handleItemsConfirmed(detected);
       }, 1000);
       
     } catch (error) {
@@ -205,7 +205,7 @@ const Index = () => {
         description: "Failed to generate to-do list. Please try again.",
         variant: "destructive",
       });
-      setAppState('detection');
+      setAppState('upload');
     }
   };
 
@@ -315,25 +315,6 @@ const Index = () => {
             </div>
           )}
 
-          {appState === 'detection' && (
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-6">
-                <Button 
-                  variant="ghost" 
-                  onClick={handleBackToUpload}
-                  className="mb-4 text-lg px-6 py-3"
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back to Upload
-                </Button>
-              </div>
-              <DetectionReview
-                detectedItems={detectedItems}
-                onItemsConfirmed={handleItemsConfirmed}
-                videoPreview={videoPreview}
-              />
-            </div>
-          )}
 
           {appState === 'results' && (
             <div className="max-w-5xl mx-auto">
