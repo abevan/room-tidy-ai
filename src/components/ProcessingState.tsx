@@ -6,43 +6,38 @@ import { Brain, Eye, Sparkles, Video } from 'lucide-react';
 interface ProcessingStateProps {
   currentStep: number;
   progress: number;
+  isGenerating?: boolean;
 }
 
-const steps = [
-  {
-    id: 1,
-    title: "Extracting Frames",
-    description: "Analyzing your video frame by frame...",
-    icon: Video,
-  },
-  {
-    id: 2,
-    title: "Object Detection", 
-    description: "AI is identifying items in your room...",
-    icon: Eye,
-  },
-  {
-    id: 3,
-    title: "AI Analysis",
-    description: "Generating personalized cleanup plan...",
-    icon: Brain,
-  },
-  {
-    id: 4,
-    title: "Creating Tasks",
-    description: "Building your interactive to-do list...",
-    icon: Sparkles,
-  },
-];
+export const ProcessingState: React.FC<ProcessingStateProps> = ({ 
+  currentStep, 
+  progress,
+  isGenerating = false
+}) => {
+  const analysisSteps = [
+    { id: 1, title: 'Uploading Video', description: 'Preparing your room video for analysis', icon: Video },
+    { id: 2, title: 'Extracting Frames', description: 'Capturing key moments from your video', icon: Video },
+    { id: 3, title: 'AI Vision Analysis', description: 'Identifying objects and areas in your room', icon: Eye },
+    { id: 4, title: 'Processing Complete', description: 'Ready for review and editing', icon: Sparkles },
+  ];
 
-export const ProcessingState: React.FC<ProcessingStateProps> = ({ currentStep, progress }) => {
+  const generationSteps = [
+    { id: 1, title: 'Generating To-Do List', description: 'Creating personalized cleaning tasks based on detected items', icon: Brain },
+  ];
+
+  const steps = isGenerating ? generationSteps : analysisSteps;
   return (
     <div className="w-full max-w-2xl mx-auto">
       <Card className="p-8 bg-gradient-hero border-0 shadow-medium">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold mb-2">Analyzing Your Room</h2>
+          <h2 className="text-2xl font-bold mb-2">
+            {isGenerating ? 'Generating Your To-Do List' : 'Analyzing Your Room'}
+          </h2>
           <p className="text-muted-foreground">
-            Our AI is working hard to create the perfect cleanup plan for you
+            {isGenerating 
+              ? 'Creating personalized cleaning tasks based on detected items'
+              : 'Our AI is working hard to identify items in your room'
+            }
           </p>
         </div>
 

@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { HeroSection } from '@/components/HeroSection';
+import { ApiKeySetup } from '@/components/ApiKeySetup';
 import { VideoUpload } from '@/components/VideoUpload';
 import { ProcessingState } from '@/components/ProcessingState';
+import { DetectionReview } from '@/components/DetectionReview';
 import { TodoList } from '@/components/TodoList';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { analyzeVideoWithVision } from '@/services/googleVision';
+import { generateTodoList, breakdownTask } from '@/services/geminiApi';
+import { useToast } from '@/hooks/use-toast';
 
-// Mock data for demonstration
+// Mock data for demonstration - Updated to match API types
 const mockTasks = [
   {
     id: '1',
@@ -65,49 +70,100 @@ const mockTasks = [
   },
 ];
 
-type AppState = 'hero' | 'upload' | 'processing' | 'results';
+interface DetectedItem {
+  id: string;
+  name: string;
+  confidence: number;
+  location?: string;
+}
+
+interface Task {
+  id: string;
+  description: string;
+  timeEstimate: number;
+  completed: boolean;
+  category: string;
+  subtasks?: Subtask[];
+}
+
+interface Subtask {
+  id: string;
+  description: string;
+  timeEstimate: number;
+  completed: boolean;
+}
+
+type AppState = 'hero' | 'apikey' | 'upload' | 'processing' | 'detection' | 'generating' | 'results';
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>('hero');
+  const [apiKey, setApiKey] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState(1);
   const [processingProgress, setProcessingProgress] = useState(0);
-  const [tasks, setTasks] = useState(mockTasks);
+  const [detectedItems, setDetectedItems] = useState<DetectedItem[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const { toast } = useToast();
   
   const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
 
   const handleGetStarted = () => {
+    const storedKey = localStorage.getItem('google_api_key');
+    if (storedKey) {
+      setApiKey(storedKey);
+      setAppState('upload');
+    } else {
+      setAppState('apikey');
+    }
+  };
+
+  const handleApiKeySet = (key: string) => {
+    setApiKey(key);
     setAppState('upload');
   };
 
   const handleVideoSelect = (file: File) => {
     setSelectedFile(file);
+    const url = URL.createObjectURL(file);
+    setVideoPreview(url);
   };
 
-  const handleProcessStart = () => {
+  const handleProcessStart = async () => {
+    if (!selectedFile || !apiKey) return;
+
     setAppState('processing');
-    
-    // Simulate processing steps
-    const steps = [1, 2, 3, 4];
-    let currentStepIndex = 0;
-    
-    const processNextStep = () => {
-      if (currentStepIndex < steps.length) {
-        setProcessingStep(steps[currentStepIndex]);
-        setProcessingProgress((currentStepIndex + 1) * 25);
-        currentStepIndex++;
-        
-        const delay = currentStepIndex === 1 ? 2000 : 1500; // First step takes longer
-        setTimeout(processNextStep, delay);
-      } else {
-        // Processing complete
-        setTimeout(() => {
-          setAppState('results');
-        }, 1000);
-      }
-    };
-    
-    processNextStep();
+    setProcessingStep(1);
+    setProcessingProgress(25);
+
+    try {
+      // Step 1: Extract frames and analyze
+      setProcessingStep(2);
+      setProcessingProgress(50);
+      
+      const detected = await analyzeVideoWithVision(selectedFile, apiKey);
+      setDetectedItems(detected);
+      
+      setProcessingStep(3);
+      setProcessingProgress(75);
+      
+      // Step 2: Complete processing
+      setProcessingStep(4);
+      setProcessingProgress(100);
+      
+      setTimeout(() => {
+        setAppState('detection');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Processing error:', error);
+      toast({
+        title: "Processing Error",
+        description: "Failed to analyze video. Please check your API key and try again.",
+        variant: "destructive",
+      });
+      setAppState('upload');
+    }
   };
 
   const handleTaskToggle = (taskId: string) => {
@@ -133,34 +189,56 @@ const Index = () => {
     ));
   };
 
-  const handleTaskBreakdown = (taskId: string) => {
-    // Mock breakdown - in real app this would call Gemini API
-    const mockSubtasks = [
-      {
-        id: `${taskId}a`,
-        description: 'Gather all items from the area',
-        timeEstimate: 2,
-        completed: false,
-      },
-      {
-        id: `${taskId}b`, 
-        description: 'Sort items by category',
-        timeEstimate: 3,
-        completed: false,
-      },
-      {
-        id: `${taskId}c`,
-        description: 'Clean the surface thoroughly',
-        timeEstimate: 2,
-        completed: false,
-      },
-    ];
+  const handleItemsConfirmed = async (items: DetectedItem[]) => {
+    setAppState('generating');
+    setProcessingStep(1);
+    setProcessingProgress(0);
 
-    setTasks(prev => prev.map(task => 
-      task.id === taskId && !task.subtasks
-        ? { ...task, subtasks: mockSubtasks }
-        : task
-    ));
+    try {
+      setProcessingProgress(50);
+      const generatedTasks = await generateTodoList(items, apiKey);
+      setTasks(generatedTasks);
+      setProcessingProgress(100);
+      
+      setTimeout(() => {
+        setAppState('results');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Task generation error:', error);
+      toast({
+        title: "Generation Error",
+        description: "Failed to generate to-do list. Please try again.",
+        variant: "destructive",
+      });
+      setAppState('detection');
+    }
+  };
+
+  const handleTaskBreakdown = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || task.subtasks) return;
+
+    try {
+      const subtasks = await breakdownTask(task.description, apiKey);
+      setTasks(prev => prev.map(t => 
+        t.id === taskId 
+          ? { ...t, subtasks }
+          : t
+      ));
+      
+      toast({
+        title: "Task Breakdown Complete",
+        description: `Created ${subtasks.length} subtasks for "${task.description}"`,
+      });
+    } catch (error) {
+      console.error('Task breakdown error:', error);
+      toast({
+        title: "Breakdown Error",
+        description: "Failed to break down task. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleBackToUpload = () => {
@@ -172,9 +250,14 @@ const Index = () => {
   const handleStartOver = () => {
     setAppState('hero');
     setSelectedFile(null);
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+      setVideoPreview(null);
+    }
     setProcessingStep(1);
     setProcessingProgress(0);
-    setTasks(mockTasks.map(task => ({ ...task, completed: false, subtasks: task.subtasks?.map(st => ({ ...st, completed: false })) })));
+    setDetectedItems([]);
+    setTasks([]);
   };
 
   return (
@@ -193,6 +276,27 @@ const Index = () => {
                 Get Started - Upload Your Room Video
               </Button>
             </div>
+          </div>
+        )}
+
+        {appState === 'apikey' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <Button 
+                variant="ghost" 
+                onClick={handleStartOver}
+                className="mb-4"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Home
+              </Button>
+              <h1 className="text-3xl font-bold mb-4">Setup Google APIs</h1>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                To use AI-powered room analysis, you need a Google Cloud Console API key with 
+                Cloud Vision API and Gemini API enabled.
+              </p>
+            </div>
+            <ApiKeySetup onApiKeySet={handleApiKeySet} />
           </div>
         )}
 
@@ -220,7 +324,7 @@ const Index = () => {
           </div>
         )}
 
-        {appState === 'processing' && (
+        {(appState === 'processing' || appState === 'generating') && (
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
               <Button 
@@ -235,6 +339,27 @@ const Index = () => {
             <ProcessingState 
               currentStep={processingStep}
               progress={processingProgress}
+              isGenerating={appState === 'generating'}
+            />
+          </div>
+        )}
+
+        {appState === 'detection' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <Button 
+                variant="ghost" 
+                onClick={handleBackToUpload}
+                className="mb-4"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Upload
+              </Button>
+            </div>
+            <DetectionReview
+              detectedItems={detectedItems}
+              onItemsConfirmed={handleItemsConfirmed}
+              videoPreview={videoPreview}
             />
           </div>
         )}
