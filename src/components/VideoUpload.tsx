@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Upload, Video, X, Camera, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface VideoUploadProps {
   onVideoSelect: (file: File) => void;
@@ -12,7 +13,34 @@ interface VideoUploadProps {
 
 const MAX_DURATION = 60; // 1 minute in seconds
 
+// Detect iOS devices
+const isIOSDevice = () => {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+};
+
+// Get supported MIME types for recording
+const getSupportedMimeType = () => {
+  const types = [
+    'video/mp4; codecs="avc1.42E01E, mp4a.40.2"', // H.264 + AAC for iOS
+    'video/webm; codecs="vp9, opus"',              // VP9 for modern browsers
+    'video/webm; codecs="vp8, vorbis"',            // VP8 fallback
+    'video/webm',                                   // Basic WebM
+    'video/mp4'                                     // Basic MP4
+  ];
+  
+  for (const type of types) {
+    if (MediaRecorder.isTypeSupported(type)) {
+      console.log('Using supported MIME type:', type);
+      return type;
+    }
+  }
+  console.log('No preferred MIME type supported, using default');
+  return undefined;
+};
+
 export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProcessStart }) => {
+  const isMobile = useIsMobile();
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
@@ -40,8 +68,8 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
 
   const validateVideoDuration = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
-      // Skip validation for recorded videos from camera
-      if (file.name.includes('room-video-') && file.type === 'video/webm') {
+      // Skip validation for recorded videos from camera (both WebM and MP4)
+      if (file.name.includes('room-video-') && (file.type.includes('webm') || file.type.includes('mp4'))) {
         console.log('Skipping duration validation for camera-recorded video');
         resolve(true);
         return;
@@ -123,14 +151,19 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
   const startCamera = async () => {
     try {
       console.log('Requesting camera access...');
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }, 
-        audio: true 
-      });
+      
+      // Enhanced constraints for mobile devices
+      const constraints = {
+        video: {
+          facingMode: isMobile ? 'environment' : 'user',
+          width: { ideal: isMobile ? 720 : 1280 },
+          height: { ideal: isMobile ? 1280 : 720 },
+          frameRate: { ideal: 30, max: 30 }
+        },
+        audio: true
+      };
+      
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       
       console.log('Camera access granted, setting up stream...');
       setStream(mediaStream);
@@ -166,37 +199,73 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
       setRecordingTime(prev => prev + 1);
     }, 1000);
     
-    const recorder = new MediaRecorder(stream);
-    const chunks: Blob[] = [];
+    // Get appropriate MIME type and create recorder
+    const mimeType = getSupportedMimeType();
+    const isIOS = isIOSDevice();
     
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        chunks.push(event.data);
-      }
-    };
-    
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      const file = new File([blob], `room-video-${Date.now()}.webm`, { type: 'video/webm' });
-      setRecordedVideo(file);
-      setIsRecording(false);
+    try {
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      const chunks: Blob[] = [];
       
-      // Clear timer
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
+      // Configure recording options for better iOS compatibility
+      if (isIOS) {
+        recorder.start(1000); // Capture data every second for iOS
+      } else {
+        recorder.start();
       }
-    };
-    
-    mediaRecorderRef.current = recorder;
-    recorder.start();
-    
-    // Auto-stop after max duration
-    setTimeout(() => {
-      if (recorder.state === 'recording') {
-        recorder.stop();
-      }
-    }, MAX_DURATION * 1000);
+      
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+      
+      recorder.onstop = () => {
+        const effectiveMimeType = mimeType || (isIOS ? 'video/mp4' : 'video/webm');
+        const extension = isIOS ? 'mp4' : 'webm';
+        
+        const blob = new Blob(chunks, { type: effectiveMimeType });
+        const file = new File([blob], `room-video-${Date.now()}.${extension}`, { type: effectiveMimeType });
+        
+        console.log('Recording completed:', file.name, file.size, file.type);
+        setRecordedVideo(file);
+        setIsRecording(false);
+        
+        // Clear timer
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current);
+          recordingIntervalRef.current = null;
+        }
+      };
+      
+      recorder.onerror = (event) => {
+        console.error('Recording error:', event);
+        toast({
+          title: "Recording Error",
+          description: "Failed to record video. Please try again.",
+          variant: "destructive",
+        });
+        setIsRecording(false);
+      };
+      
+      mediaRecorderRef.current = recorder;
+      
+      // Auto-stop after max duration
+      setTimeout(() => {
+        if (recorder.state === 'recording') {
+          recorder.stop();
+        }
+      }, MAX_DURATION * 1000);
+      
+    } catch (error) {
+      console.error('MediaRecorder creation failed:', error);
+      toast({
+        title: "Recording Not Supported",
+        description: "Video recording is not supported on this device.",
+        variant: "destructive",
+      });
+      setIsRecording(false);
+    }
   };
 
   const stopRecording = () => {
@@ -271,8 +340,10 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
                 autoPlay
                 muted
                 playsInline
-                className="w-full h-64 object-cover"
-                
+                className={cn(
+                  "w-full object-cover rounded-lg",
+                  isMobile ? "h-48 sm:h-64" : "h-64"
+                )}
               />
               {!stream && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
@@ -291,13 +362,26 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
             </div>
 
             {/* Camera Controls */}
-            <div className="flex justify-center gap-3">
+            <div className="flex justify-center gap-3 flex-wrap">
               {!isRecording && !recordedVideo && (
                 <>
-                  <Button variant="outline" onClick={cancelCamera}>
+                  <Button 
+                    variant="outline" 
+                    onClick={cancelCamera}
+                    className={cn(
+                      "min-h-[44px] px-6",
+                      isMobile && "min-w-[120px]"
+                    )}
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={startRecording} className="bg-destructive hover:bg-destructive/90">
+                  <Button 
+                    onClick={startRecording} 
+                    className={cn(
+                      "bg-destructive hover:bg-destructive/90 min-h-[44px] px-6",
+                      isMobile && "min-w-[140px]"
+                    )}
+                  >
                     <Camera className="w-4 h-4 mr-2" />
                     Start Recording
                   </Button>
@@ -305,17 +389,37 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
               )}
               
               {isRecording && (
-                <Button variant="outline" onClick={stopRecording}>
+                <Button 
+                  variant="outline" 
+                  onClick={stopRecording}
+                  className={cn(
+                    "min-h-[44px] px-6",
+                    isMobile && "min-w-[140px]"
+                  )}
+                >
                   Stop Recording
                 </Button>
               )}
               
               {recordedVideo && !isRecording && (
                 <>
-                  <Button variant="outline" onClick={retakeVideo}>
+                  <Button 
+                    variant="outline" 
+                    onClick={retakeVideo}
+                    className={cn(
+                      "min-h-[44px] px-6",
+                      isMobile && "min-w-[100px]"
+                    )}
+                  >
                     Retake
                   </Button>
-                  <Button onClick={confirmRecordedVideo} className="bg-success hover:bg-success/90">
+                  <Button 
+                    onClick={confirmRecordedVideo} 
+                    className={cn(
+                      "bg-success hover:bg-success/90 min-h-[44px] px-6",
+                      isMobile && "min-w-[140px]"
+                    )}
+                  >
                     <Check className="w-4 h-4 mr-2" />
                     Use This Video
                   </Button>

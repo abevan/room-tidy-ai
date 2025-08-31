@@ -70,6 +70,12 @@
     --backdrop-blur: blur(8px);
     --backdrop-blur-light: blur(4px);
     
+    /* iOS Safe Area Support */
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-right: env(safe-area-inset-right);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    --safe-area-inset-left: env(safe-area-inset-left);
+    
     /* Sidebar */
     --sidebar-background: 0 0% 98% / 0.8;
     --sidebar-foreground: 222 84% 4.9%;
@@ -118,6 +124,17 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    
+    /* iOS Safe Areas */
+    padding-top: var(--safe-area-inset-top);
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+    padding-bottom: var(--safe-area-inset-bottom);
+    
+    /* Touch optimizations for mobile */
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   
   /* Apple-style scrollbars */
@@ -262,5 +279,77 @@
   
   .blur-progressive:hover {
     filter: blur(1px);
+  }
+  
+  /* iOS-specific optimizations */
+  .ios-safe-top {
+    padding-top: var(--safe-area-inset-top);
+  }
+  
+  .ios-safe-bottom {
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+  
+  .ios-safe-left {
+    padding-left: var(--safe-area-inset-left);
+  }
+  
+  .ios-safe-right {
+    padding-right: var(--safe-area-inset-right);
+  }
+  
+  /* Touch-friendly buttons */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Mobile-first responsive containers */
+  .container-safe {
+    padding-left: max(1rem, var(--safe-area-inset-left));
+    padding-right: max(1rem, var(--safe-area-inset-right));
+  }
+  
+  /* Improved mobile spacing */
+  .mobile-spacing {
+    padding: 1rem;
+  }
+  
+  @media (min-width: 640px) {
+    .mobile-spacing {
+      padding: 1.5rem;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-spacing {
+      padding: 2rem;
+    }
+  }
+  
+  /* Mobile video optimizations */
+  .mobile-video {
+    max-height: 50vh;
+    object-fit: cover;
+  }
+  
+  @media (min-width: 640px) {
+    .mobile-video {
+      max-height: 40vh;
+    }
+  }
+  
+  /* Enhanced mobile button styles */
+  .mobile-button {
+    min-height: 44px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 0.75rem;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .mobile-button:hover {
+      transform: translateY(-1px);
+    }
   }
 }

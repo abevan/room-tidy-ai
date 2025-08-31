@@ -132,6 +132,19 @@ const config = {
       transitionTimingFunction: {
         'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
+      spacing: {
+        'safe-top': 'var(--safe-area-inset-top)',
+        'safe-bottom': 'var(--safe-area-inset-bottom)',
+        'safe-left': 'var(--safe-area-inset-left)',
+        'safe-right': 'var(--safe-area-inset-right)',
+      },
+      minHeight: {
+        'touch': '44px',
+        'screen-safe': 'calc(100vh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom))',
+      },
+      minWidth: {
+        'touch': '44px',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
