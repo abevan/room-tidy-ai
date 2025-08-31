@@ -92,7 +92,7 @@ For each item you identify, specify its location in the room. Return ONLY a JSON
 
 Focus on actionable cleaning tasks, not just object identification. Be specific about what needs to be cleaned or organized.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
