@@ -42,16 +42,25 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
         window.URL.revokeObjectURL(video.src);
         const duration = video.duration;
         
-        if (duration > MAX_DURATION) {
+        console.log('Video duration validation:', duration, 'seconds, max allowed:', MAX_DURATION);
+        
+        // Add a small buffer to account for encoding differences
+        if (duration > MAX_DURATION + 2) {
           toast({
             title: "Video Too Long",
-            description: `Please select a video shorter than ${MAX_DURATION} seconds (1 minute).`,
+            description: `Please select a video shorter than ${MAX_DURATION} seconds (1 minute). Current duration: ${Math.round(duration)} seconds.`,
             variant: "destructive",
           });
           resolve(false);
         } else {
           resolve(true);
         }
+      };
+      
+      video.onerror = () => {
+        console.error('Error loading video for duration check');
+        // If we can't check duration, allow the video
+        resolve(true);
       };
       
       video.src = URL.createObjectURL(file);
@@ -228,7 +237,7 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
                 muted
                 playsInline
                 className="w-full h-64 object-cover"
-                style={{ transform: 'scaleX(-1)' }} // Mirror effect like phone cameras
+                
               />
               {!stream && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
