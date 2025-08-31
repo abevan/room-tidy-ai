@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { AIMascot } from '@/components/AIMascot';
 
 interface AuthFormProps {
   onSuccess: () => void;
@@ -90,16 +91,24 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
       <Card className="w-full max-w-md shadow-strong border-0">
-        <CardHeader className="space-y-1 text-center pb-4">
-          <CardTitle className="text-2xl font-semibold">
-            {isLogin ? 'Welcome back' : 'Create account'}
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            {isLogin 
-              ? 'Sign in to your account to continue' 
-              : 'Create a new account to get started'
-            }
-          </CardDescription>
+        <CardHeader className="space-y-4 text-center pb-4">
+          <div className="flex justify-center mb-2">
+            <AIMascot />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+              CleanSight AI
+            </h1>
+            <CardTitle className="text-xl font-semibold">
+              {isLogin ? 'Welcome back' : 'Join CleanSight'}
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              {isLogin 
+                ? 'Sign in to continue your cleaning journey' 
+                : 'Your AI-powered cleaning companion awaits'
+              }
+            </CardDescription>
+          </div>
         </CardHeader>
         
         <CardContent className="space-y-4">
