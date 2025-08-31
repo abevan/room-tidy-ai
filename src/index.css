@@ -8,27 +8,27 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 224 71% 4%;
-    --foreground: 210 40% 98%;
+    --background: 220 20% 97%;
+    --foreground: 222 84% 4%;
 
-    --card: 224 71% 6%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 84% 4%;
 
-    --popover: 224 71% 6%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 84% 4%;
 
     --primary: 266 100% 70%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 280 100% 80%;
 
-    --secondary: 240 10% 15%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 84% 4%;
 
-    --muted: 240 10% 12%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
 
     --accent: 196 100% 60%;
-    --accent-foreground: 224 71% 4%;
+    --accent-foreground: 222 84% 4%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -36,15 +36,15 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 10% 20%;
-    --input: 240 10% 20%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
     --ring: 266 100% 70%;
 
     /* Modern AI Design System Tokens */
     --gradient-primary: linear-gradient(135deg, hsl(266 100% 70%), hsl(280 100% 80%), hsl(196 100% 60%));
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(240 10% 8%));
-    --gradient-hero: linear-gradient(135deg, hsl(224 71% 4%) 0%, hsl(240 10% 8%) 50%, hsl(224 71% 6%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(240 10% 8%), hsl(224 71% 6%));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(220 15% 92%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 20% 97%) 0%, hsl(220 15% 94%) 50%, hsl(220 20% 98%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 15% 98%), hsl(0 0% 100%));
     --gradient-mesh: conic-gradient(from 0deg at 50% 50%, hsl(266 100% 70% / 0.1), hsl(196 100% 60% / 0.1), hsl(280 100% 80% / 0.1), hsl(266 100% 70% / 0.1));
     
     --shadow-soft: 0 4px 30px -4px hsl(266 100% 70% / 0.2);
@@ -79,14 +79,14 @@ All colors MUST be HSL.
     --background: 220 30% 98%;
     --foreground: 220 10% 15%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 10% 15%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 10% 15%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 266 100% 70%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;

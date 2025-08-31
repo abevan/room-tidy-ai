@@ -1,18 +1,50 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Upload, Video, X } from 'lucide-react';
+import { Upload, Video, X, Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface VideoUploadProps {
   onVideoSelect: (file: File) => void;
   onProcessStart: () => void;
 }
 
+const MAX_DURATION = 60; // 1 minute in seconds
+
 export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProcessStart }) => {
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const { toast } = useToast();
+
+  const validateVideoDuration = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        const duration = video.duration;
+        
+        if (duration > MAX_DURATION) {
+          toast({
+            title: "Video Too Long",
+            description: `Please select a video shorter than ${MAX_DURATION} seconds (1 minute).`,
+            variant: "destructive",
+          });
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      };
+      
+      video.src = URL.createObjectURL(file);
+    });
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -36,19 +68,77 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
     }
   }, []);
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = async (file: File) => {
     if (file.type.startsWith('video/')) {
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setVideoPreview(url);
-      onVideoSelect(file);
+      const isValidDuration = await validateVideoDuration(file);
+      if (isValidDuration) {
+        setSelectedFile(file);
+        const url = URL.createObjectURL(file);
+        setVideoPreview(url);
+        onVideoSelect(file);
+      }
     }
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleFileSelect(file);
+      await handleFileSelect(file);
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' }, 
+        audio: true 
+      });
+      setStream(mediaStream);
+      setIsRecording(true);
+      
+      const recorder = new MediaRecorder(mediaStream);
+      const chunks: Blob[] = [];
+      
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+      
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const file = new File([blob], `room-video-${Date.now()}.webm`, { type: 'video/webm' });
+        
+        await handleFileSelect(file);
+        setIsRecording(false);
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          setStream(null);
+        }
+      };
+      
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      
+      setTimeout(() => {
+        if (recorder.state === 'recording') {
+          recorder.stop();
+        }
+      }, MAX_DURATION * 1000);
+      
+    } catch (error) {
+      console.error('Camera access error:', error);
+      toast({
+        title: "Camera Access Failed",
+        description: "Please allow camera access or upload a video file instead.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
     }
   };
 
@@ -61,38 +151,82 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto space-y-6">
       {!selectedFile ? (
-        <Card
-          className={cn(
-            "relative border-2 border-dashed transition-all duration-300 cursor-pointer hover:shadow-medium",
-            dragOver
-              ? "border-primary bg-gradient-hero scale-105"
-              : "border-border hover:border-primary/50"
-          )}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <label className="block p-12 text-center cursor-pointer">
-            <input
-              type="file"
-              accept="video/*"
-              onChange={handleFileInput}
-              className="hidden"
-            />
-            <Upload className="w-16 h-16 mx-auto mb-4 text-primary opacity-80" />
-            <h3 className="text-xl font-semibold mb-2">Upload Room Video</h3>
-            <p className="text-muted-foreground mb-4">
-              Drag and drop your room video here, or click to browse
+        <div className="space-y-6">
+          {/* Camera Option */}
+          <Card className="p-8 text-center border-2 border-dashed border-primary/30 bg-gradient-card hover:shadow-medium transition-all">
+            <Camera className="w-16 h-16 mx-auto mb-4 text-primary" />
+            <h3 className="text-xl font-semibold mb-2">Record with Camera</h3>
+            <p className="text-muted-foreground mb-6">
+              Record a quick video of your room (up to 1 minute)
             </p>
-            <p className="text-sm text-muted-foreground">
-              Supports MP4, MOV, AVI files up to 100MB
-            </p>
-          </label>
-        </Card>
+            <Button 
+              onClick={startCamera}
+              size="lg"
+              className="shadow-medium hover:shadow-strong px-8 py-3"
+              disabled={isRecording}
+            >
+              {isRecording ? 'Recording...' : 'Start Recording'}
+            </Button>
+            
+            {isRecording && (
+              <div className="mt-6 space-y-3">
+                <div className="flex items-center justify-center gap-2 text-destructive">
+                  <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+                  <span className="font-medium">Recording in progress</span>
+                </div>
+                <Button variant="outline" onClick={stopRecording} size="sm">
+                  Stop Recording
+                </Button>
+              </div>
+            )}
+          </Card>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-4 text-muted-foreground font-medium">
+                or upload file
+              </span>
+            </div>
+          </div>
+
+          {/* Upload Option */}
+          <Card
+            className={cn(
+              "relative border-2 border-dashed transition-all duration-300 cursor-pointer hover:shadow-medium",
+              dragOver
+                ? "border-primary bg-gradient-hero scale-105"
+                : "border-border hover:border-primary/50"
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <label className="block p-8 text-center cursor-pointer">
+              <input
+                type="file"
+                accept="video/*"
+                onChange={handleFileInput}
+                className="hidden"
+              />
+              <Upload className="w-12 h-12 mx-auto mb-4 text-primary opacity-80" />
+              <h3 className="text-lg font-semibold mb-2">Upload Video File</h3>
+              <p className="text-muted-foreground mb-4">
+                Drag and drop your room video here, or click to browse
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Supports MP4, MOV, AVI files (max 1 minute, up to 100MB)
+              </p>
+            </label>
+          </Card>
+        </div>
       ) : (
-        <Card className="relative p-6 shadow-medium">
+        <Card className="relative p-6 shadow-medium bg-gradient-card">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <Video className="w-5 h-5 text-primary" />
@@ -113,16 +247,16 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
               <video
                 src={videoPreview}
                 controls
-                className="w-full max-h-64 rounded-lg object-cover"
+                className="w-full max-h-64 rounded-lg object-cover shadow-soft"
               />
             </div>
           )}
           
           <Button 
-            variant="hero" 
+            variant="default"
             size="lg" 
             onClick={onProcessStart}
-            className="w-full"
+            className="w-full shadow-medium hover:shadow-strong bg-gradient-primary"
           >
             Analyze Room & Generate To-Do List
           </Button>

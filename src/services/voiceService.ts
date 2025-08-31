@@ -28,7 +28,44 @@ export const generateCleaningMotivation = (tasks: Task[], totalTime: number): st
   return `Hey there! I've analyzed your space and found ${categoryText} that could use some attention. If we tackle these ${itemCount} tasks together, it should take ${timeText}. The great news is that we can make a huge visual impact pretty quickly! Ready to transform your space? Let's start with the most impactful tasks first!`;
 };
 
-export const speakText = (text: string): Promise<void> => {
+export const generateStepByStepGuidance = (tasks: Task[]): string[] => {
+  const guidance: string[] = [];
+  
+  // Initial motivation
+  const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
+  guidance.push(generateCleaningMotivation(tasks, totalTime));
+  
+  // Step-by-step guidance for each task
+  tasks.forEach((task, index) => {
+    const stepNumber = index + 1;
+    const isLast = index === tasks.length - 1;
+    
+    let message = `Step ${stepNumber}: Let's ${task.description.toLowerCase()}. `;
+    
+    if (task.timeEstimate <= 5) {
+      message += "This should be quick - just a few minutes! ";
+    } else if (task.timeEstimate <= 10) {
+      message += "This will take about 10 minutes, but you've got this! ";
+    } else {
+      message += `This might take around ${task.timeEstimate} minutes, but take your time. `;
+    }
+    
+    message += "Focus on one area at a time, and remember - progress over perfection!";
+    
+    if (isLast) {
+      message += " You're almost done - this is the final step!";
+    }
+    
+    guidance.push(message);
+  });
+  
+  // Completion message
+  guidance.push("Congratulations! You've completed your cleaning plan. Your space looks amazing and you should feel proud of what you've accomplished!");
+  
+  return guidance;
+};
+
+export const speakText = (text: string, volume: number = 0.8): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (!('speechSynthesis' in window)) {
       reject(new Error('Speech synthesis not supported'));
@@ -37,19 +74,54 @@ export const speakText = (text: string): Promise<void> => {
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.9;
-    utterance.pitch = 1;
-    utterance.volume = 0.8;
+    utterance.pitch = 1.1;
+    utterance.volume = volume / 100;
     
-    // Try to use a natural sounding voice
-    const voices = speechSynthesis.getVoices();
-    const preferredVoice = voices.find(voice => 
-      voice.name.includes('Google') || 
-      voice.name.includes('Natural') ||
-      voice.name.includes('Enhanced')
-    );
+    // Wait for voices to load, then select the best one
+    const selectVoice = () => {
+      const voices = speechSynthesis.getVoices();
+      
+      // Prefer high-quality voices in order of preference
+      const preferredVoices = [
+        // Google voices (highest quality)
+        'Google US English',
+        'Google UK English Female',
+        'Google UK English Male',
+        
+        // System voices with "Natural" or "Enhanced"
+        voices.find(voice => voice.name.includes('Natural')),
+        voices.find(voice => voice.name.includes('Enhanced')),
+        voices.find(voice => voice.name.includes('Premium')),
+        
+        // Microsoft voices
+        voices.find(voice => voice.name.includes('Microsoft') && voice.name.includes('Aria')),
+        voices.find(voice => voice.name.includes('Microsoft') && voice.name.includes('Jenny')),
+        
+        // Other good options
+        voices.find(voice => voice.name.includes('Samantha')),
+        voices.find(voice => voice.name.includes('Alex')),
+        voices.find(voice => voice.name.includes('Victoria')),
+      ].filter(Boolean);
+
+      const selectedVoice = preferredVoices.find(voice => 
+        typeof voice === 'string' ? 
+          voices.find(v => v.name === voice) : 
+          voice
+      );
+
+      if (selectedVoice) {
+        utterance.voice = typeof selectedVoice === 'string' ? 
+          voices.find(v => v.name === selectedVoice) || null :
+          selectedVoice;
+      }
+    };
+
+    // Try to select voice immediately
+    selectVoice();
     
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+    // If no voices available, wait for them to load
+    if (speechSynthesis.getVoices().length === 0) {
+      speechSynthesis.addEventListener('voiceschanged', selectVoice, { once: true });
     }
 
     utterance.onend = () => resolve();
@@ -62,5 +134,17 @@ export const speakText = (text: string): Promise<void> => {
 export const stopSpeaking = () => {
   if ('speechSynthesis' in window) {
     speechSynthesis.cancel();
+  }
+};
+
+export const pauseSpeaking = () => {
+  if ('speechSynthesis' in window && speechSynthesis.speaking) {
+    speechSynthesis.pause();
+  }
+};
+
+export const resumeSpeaking = () => {
+  if ('speechSynthesis' in window && speechSynthesis.paused) {
+    speechSynthesis.resume();
   }
 };

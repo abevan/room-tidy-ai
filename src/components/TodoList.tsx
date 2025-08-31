@@ -3,8 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Clock, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { CheckCircle2, Clock, Sparkles, ChevronDown, ChevronRight, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AIMascot } from '@/components/AIMascot';
+import { AudioControls } from '@/components/AudioControls';
+import { generateStepByStepGuidance, speakText, stopSpeaking, pauseSpeaking, resumeSpeaking } from '@/services/voiceService';
 
 interface SubTask {
   id: string;
@@ -39,12 +42,73 @@ export const TodoList: React.FC<TodoListProps> = ({
   onTaskBreakdown,
 }) => {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [showAudioControls, setShowAudioControls] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [guidanceSteps, setGuidanceSteps] = useState<string[]>([]);
   
   const completedTasks = tasks.filter(task => task.completed).length;
   const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
   const completedTime = tasks
     .filter(task => task.completed)
     .reduce((sum, task) => sum + task.timeEstimate, 0);
+
+  React.useEffect(() => {
+    if (tasks.length > 0 && guidanceSteps.length === 0) {
+      const steps = generateStepByStepGuidance(tasks);
+      setGuidanceSteps(steps);
+    }
+  }, [tasks]);
+
+  const handlePlayGuidance = async () => {
+    if (!showAudioControls) {
+      setShowAudioControls(true);
+      setCurrentStep(0);
+    }
+    
+    if (currentStep < guidanceSteps.length) {
+      setIsPlaying(true);
+      try {
+        await speakText(guidanceSteps[currentStep]);
+        setCurrentStep(prev => prev + 1);
+        setIsPlaying(false);
+      } catch (error) {
+        console.error('Speech error:', error);
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  const handlePause = () => {
+    pauseSpeaking();
+    setIsPlaying(false);
+  };
+
+  const handleResume = () => {
+    resumeSpeaking();
+    setIsPlaying(true);
+  };
+
+  const handleStop = () => {
+    stopSpeaking();
+    setIsPlaying(false);
+    setShowAudioControls(false);
+    setCurrentStep(0);
+  };
+
+  const handleStepChange = async (step: number) => {
+    stopSpeaking();
+    setCurrentStep(step);
+    setIsPlaying(true);
+    
+    try {
+      await speakText(guidanceSteps[step]);
+      setIsPlaying(false);
+    } catch (error) {
+      console.error('Speech error:', error);
+      setIsPlaying(false);
+    }
+  };
 
   const toggleExpand = (taskId: string) => {
     const newExpanded = new Set(expandedTasks);
@@ -95,6 +159,44 @@ export const TodoList: React.FC<TodoListProps> = ({
         <Progress value={progress} className="h-3" />
         <div className="text-center mt-2 text-sm text-muted-foreground">
           {Math.round(progress)}% Complete
+        </div>
+      </Card>
+
+      {/* AI Mascot & Audio Controls */}
+      <Card className="p-6 bg-gradient-card border-0 shadow-medium">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative">
+            <AIMascot />
+            <Button
+              variant="ghost" 
+              size="icon"
+              onClick={handlePlayGuidance}
+              className="absolute inset-0 w-full h-full rounded-full bg-primary/10 hover:bg-primary/20 transition-all duration-300 backdrop-blur-sm"
+            >
+              <Play className="w-6 h-6 text-primary" />
+            </Button>
+          </div>
+          
+          <div className="text-center">
+            <h3 className="font-semibold mb-1">AI Cleaning Coach</h3>
+            <p className="text-sm text-muted-foreground">
+              Click to get step-by-step guidance through your cleaning tasks
+            </p>
+          </div>
+          
+          {showAudioControls && (
+            <div className="w-full max-w-md">
+              <AudioControls
+                isPlaying={isPlaying}
+                onPlay={handleResume}
+                onPause={handlePause}
+                onStop={handleStop}
+                currentStep={currentStep}
+                totalSteps={guidanceSteps.length}
+                onStepChange={handleStepChange}
+              />
+            </div>
+          )}
         </div>
       </Card>
 
