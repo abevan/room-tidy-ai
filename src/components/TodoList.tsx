@@ -3,11 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Clock, ChevronDown, ChevronRight, Play } from 'lucide-react';
+import { CheckCircle2, Clock, Sparkles, ChevronDown, ChevronRight, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AIMascot } from '@/components/AIMascot';
 import { AudioControls } from '@/components/AudioControls';
-import { generateStepByStepGuidance, generateCleaningMotivation, speakText, stopSpeaking, pauseSpeaking, resumeSpeaking } from '@/services/voiceService';
+import { generateStepByStepGuidance, speakText, stopSpeaking, pauseSpeaking, resumeSpeaking } from '@/services/elevenlabsVoiceService';
 import { exportToCalendar } from '@/utils/calendarExport';
 import { Download } from 'lucide-react';
 
@@ -33,6 +33,7 @@ interface TodoListProps {
   totalTime: number;
   onTaskToggle: (taskId: string) => void;
   onSubtaskToggle: (taskId: string, subtaskId: string) => void;
+  onTaskBreakdown: (taskId: string) => void;
 }
 
 export const TodoList: React.FC<TodoListProps> = ({
@@ -40,13 +41,13 @@ export const TodoList: React.FC<TodoListProps> = ({
   totalTime,
   onTaskToggle,
   onSubtaskToggle,
+  onTaskBreakdown,
 }) => {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [showAudioControls, setShowAudioControls] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [guidanceSteps, setGuidanceSteps] = useState<string[]>([]);
-  const [audioLoading, setAudioLoading] = useState(false);
   
   const completedTasks = tasks.filter(task => task.completed).length;
   const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
@@ -56,37 +57,28 @@ export const TodoList: React.FC<TodoListProps> = ({
 
   React.useEffect(() => {
     if (tasks.length > 0 && guidanceSteps.length === 0) {
-      const steps = generateCleaningMotivation(tasks, totalTime);
-      setGuidanceSteps([steps]);
+      const steps = generateStepByStepGuidance(tasks);
+      setGuidanceSteps(steps);
     }
-  }, [tasks, totalTime]);
+  }, [tasks]);
 
   const handlePlayGuidance = async () => {
     if (!showAudioControls) {
       setShowAudioControls(true);
       setCurrentStep(0);
-      setAudioLoading(true);
-      await playAllSteps();
-      setAudioLoading(false);
     }
-  };
-
-  const playAllSteps = async () => {
-    for (let i = currentStep; i < guidanceSteps.length; i++) {
-      setCurrentStep(i);
+    
+    if (currentStep < guidanceSteps.length) {
       setIsPlaying(true);
       try {
-        console.log(`🎵 Playing step ${i + 1}:`, guidanceSteps[i].substring(0, 50) + '...');
-        await speakText(guidanceSteps[i]);
-        console.log(`🎵 Completed step ${i + 1}`);
-        // Small pause between steps
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await speakText(guidanceSteps[currentStep]);
+        setCurrentStep(prev => prev + 1);
+        setIsPlaying(false);
       } catch (error) {
-        console.error('Speech error at step', i + 1, ':', error);
-        break;
+        console.error('Speech error:', error);
+        setIsPlaying(false);
       }
     }
-    setIsPlaying(false);
   };
 
   const handlePause = () => {
@@ -106,62 +98,18 @@ export const TodoList: React.FC<TodoListProps> = ({
     setCurrentStep(0);
   };
 
-  const handleGenerateGuidance = async (task: Task) => {
-    setAudioLoading(true);
-    try {
-      console.log('🎯 Generating personalized guidance for task:', task.description);
-      
-      // Generate personalized, long-form, humorous guidance for this specific task
-      const personalizedGuidance = `Alright my amazing, motivated friend! Let's dive into "${task.description}" together, and I promise we're going to make this as fun and rewarding as possible! 
-
-You know what I love about you? You're not just sitting there thinking about organizing - you're actually DOING it! That puts you in the top 10% of people who take action on their goals. Seriously, give yourself some credit for that!
-
-Here's the thing about ${task.description.toLowerCase()} - I can already picture how incredible your space is going to look when we're done. But more importantly, I can feel how proud and accomplished you're going to feel! That sense of achievement? It's going to ripple out into every other area of your life.
-
-Now, let's talk strategy for ${task.description}. This isn't just about moving things around - we're creating a system that future-you will absolutely thank us for. Think of this as an investment in your own peace of mind and productivity.
-
-${task.category} tasks are particularly satisfying because you get to see immediate visual results. It's like giving your space a mini-makeover! And here's a fun fact: organized spaces actually reduce cortisol levels and increase focus. So you're literally improving your mental health right now!
-
-Take your time with this - there's no rush whatsoever. Put on some music that makes you feel energized, maybe grab your favorite drink, and let's turn this into a positive experience. Remember, every item you organize is a small victory, and small victories add up to major life changes.
-
-You've got approximately ${task.timeEstimate} minutes for this task, but honestly? Take as long as you need. This is about progress, not perfection. And progress is exactly what you're making right now by showing up and taking action.
-
-Ready to transform your ${task.category.toLowerCase()} space and feel absolutely amazing about it? Let's do this thing! I'm right here cheering you on every step of the way!`;
-
-      setGuidanceSteps([personalizedGuidance]);
-      setCurrentStep(0);
-      setShowAudioControls(true);
-      
-      // Immediately play the personalized guidance
-      console.log('🎯 Playing personalized task guidance');
-      setIsPlaying(true);
-      await speakText(personalizedGuidance);
-      setIsPlaying(false);
-      
-    } catch (error) {
-      console.error('Error generating guidance:', error);
-    } finally {
-      setAudioLoading(false);
-    }
-  };
-
-  const handlePlayStep = async (stepIndex: number) => {
-    if (stepIndex < guidanceSteps.length) {
-      setCurrentStep(stepIndex);
-      setIsPlaying(true);
-      try {
-        await speakText(guidanceSteps[stepIndex]);
-        setIsPlaying(false);
-        // Don't auto-advance - let user control when to move to next step
-      } catch (error) {
-        console.error('Error playing audio:', error);
-        setIsPlaying(false);
-      }
-    }
-  };
-
   const handleStepChange = async (step: number) => {
-    await handlePlayStep(step);
+    stopSpeaking();
+    setCurrentStep(step);
+    setIsPlaying(true);
+    
+    try {
+      await speakText(guidanceSteps[step]);
+      setIsPlaying(false);
+    } catch (error) {
+      console.error('Speech error:', error);
+      setIsPlaying(false);
+    }
   };
 
   const toggleExpand = (taskId: string) => {
@@ -176,10 +124,9 @@ Ready to transform your ${task.category.toLowerCase()} space and feel absolutely
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      'Kitchen': 'bg-blue-100 text-blue-800',
-      'Bathroom': 'bg-green-100 text-green-800', 
-      'Living Room': 'bg-purple-100 text-purple-800',
-      'Bedroom': 'bg-pink-100 text-pink-800',
+      'Clothing': 'bg-blue-100 text-blue-800',
+      'Surface': 'bg-green-100 text-green-800',
+      'Items': 'bg-purple-100 text-purple-800',
       'General': 'bg-gray-100 text-gray-800',
     };
     return colors[category as keyof typeof colors] || colors.General;
@@ -188,9 +135,9 @@ Ready to transform your ${task.category.toLowerCase()} space and feel absolutely
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* Progress Header */}
-      <Card className="p-6 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg">
+      <Card className="p-6 bg-gradient-hero border-0 shadow-medium">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold mb-2 text-foreground">Room Cleanup Plan</h2>
+          <h2 className="text-2xl font-bold mb-2">Room Cleanup Plan</h2>
           <p className="text-muted-foreground">
             AI-generated tasks to make your room spotless
           </p>
@@ -218,7 +165,7 @@ Ready to transform your ${task.category.toLowerCase()} space and feel absolutely
       </Card>
 
       {/* AI Mascot & Audio Controls */}
-      <Card className="p-8 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg">
+      <Card className="p-8 bg-gradient-card border-0 shadow-medium">
         <div className="flex flex-col items-center space-y-6">
           <AIMascot 
             onClick={handlePlayGuidance}
@@ -227,18 +174,10 @@ Ready to transform your ${task.category.toLowerCase()} space and feel absolutely
           />
           
           <div className="text-center">
-            <h3 className="text-xl font-bold mb-2 text-foreground">🎯 AI Cleaning Coach</h3>
-            <p className="text-base text-muted-foreground mb-4">
-              {audioLoading 
-                ? "🎵 Generating your personalized audio guidance..."
-                : "Click the mascot to get step-by-step guidance through your cleaning tasks!"
-              }
+            <h3 className="text-xl font-bold mb-2">🎯 AI Cleaning Coach</h3>
+            <p className="text-base text-muted-foreground">
+              Click the mascot to get step-by-step guidance through your cleaning tasks!
             </p>
-            {audioLoading && (
-              <div className="text-sm text-primary animate-pulse">
-                Please wait while we prepare your cleaning guidance...
-              </div>
-            )}
           </div>
           
           {/* Calendar Export Button */}
@@ -270,15 +209,30 @@ Ready to transform your ${task.category.toLowerCase()} space and feel absolutely
       {/* Task List */}
       <div className="space-y-3">
         {tasks.map((task) => (
-          <Card key={task.id} className="overflow-hidden bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-200">
+          <Card key={task.id} className="overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200">
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-start gap-3 flex-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onTaskToggle(task.id)}
+                    className={cn(
+                      "mt-0.5 transition-all duration-200",
+                      task.completed ? "text-success" : "text-muted-foreground hover:text-primary"
+                    )}
+                  >
+                    <CheckCircle2 className={cn(
+                      "w-5 h-5",
+                      task.completed ? "fill-current" : ""
+                    )} />
+                  </Button>
+                  
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <p className={cn(
                         "font-medium transition-all duration-200",
-                        task.completed ? "line-through text-muted-foreground" : "text-foreground"
+                        task.completed ? "line-through text-muted-foreground" : ""
                       )}>
                         {task.description}
                       </p>
@@ -293,7 +247,7 @@ Ready to transform your ${task.category.toLowerCase()} space and feel absolutely
                         <span>{task.timeEstimate} min</span>
                       </div>
                       
-                      {task.subtasks && task.subtasks.length > 0 && (
+                      {task.subtasks && (
                         <div className="flex items-center gap-1">
                           <span>{task.subtasks.filter(st => st.completed).length}/{task.subtasks.length} subtasks</span>
                         </div>
@@ -304,29 +258,17 @@ Ready to transform your ${task.category.toLowerCase()} space and feel absolutely
                 
                 <div className="flex items-center gap-2">
                   <Button
-                    variant={task.completed ? "secondary" : "default"}
-                    size="sm"
-                    onClick={() => onTaskToggle(task.id)}
-                    className="opacity-80 hover:opacity-100"
-                  >
-                    <CheckCircle2 className={cn(
-                      "w-4 h-4 mr-1",
-                      task.completed ? "fill-current" : ""
-                    )} />
-                    {task.completed ? "Completed" : "Complete"}
-                  </Button>
-                  
-                  <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleGenerateGuidance(task)}
-                    disabled={audioLoading}
-                    className="text-xs"
+                    onClick={() => onTaskBreakdown(task.id)}
+                    disabled={task.completed}
+                    className="opacity-80 hover:opacity-100"
                   >
-                    🎯 Get Coaching
+                    <Sparkles className="w-4 h-4 mr-1" />
+                    Break Down
                   </Button>
                   
-                  {task.subtasks && task.subtasks.length > 0 && (
+                  {task.subtasks && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -343,7 +285,7 @@ Ready to transform your ${task.category.toLowerCase()} space and feel absolutely
               </div>
               
               {/* Subtasks */}
-              {task.subtasks && task.subtasks.length > 0 && expandedTasks.has(task.id) && (
+              {task.subtasks && expandedTasks.has(task.id) && (
                 <div className="mt-4 ml-8 space-y-2 border-l-2 border-border pl-4">
                   {task.subtasks.map((subtask) => (
                     <div key={subtask.id} className="flex items-center gap-3">
@@ -363,7 +305,7 @@ Ready to transform your ${task.category.toLowerCase()} space and feel absolutely
                       </Button>
                       <p className={cn(
                         "text-sm flex-1",
-                        subtask.completed ? "line-through text-muted-foreground" : "text-foreground"
+                        subtask.completed ? "line-through text-muted-foreground" : ""
                       )}>
                         {subtask.description}
                       </p>

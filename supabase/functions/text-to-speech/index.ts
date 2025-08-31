@@ -8,7 +8,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text } = await req.json()
+    const { text, voice_id = '9BWtsMINqrJLrRacOk9x', model_id = 'eleven_multilingual_v2' } = await req.json()
 
     if (!text) {
       return new Response(
@@ -17,29 +17,29 @@ serve(async (req) => {
       )
     }
 
-    const elevenLabsApiKey = Deno.env.get('ELEVENLABS_API_KEY')
-    if (!elevenLabsApiKey) {
+    const elevenlabsApiKey = Deno.env.get('ELEVENLABS_API_KEY')
+    if (!elevenlabsApiKey) {
       return new Response(
         JSON.stringify({ error: 'ElevenLabs API key not configured' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
 
-    // Use ElevenLabs API with premium voice (Aria - natural and friendly)
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x', {
+    // Call ElevenLabs API
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice_id}`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
-        'xi-api-key': elevenLabsApiKey,
+        'xi-api-key': elevenlabsApiKey,
       },
       body: JSON.stringify({
-        text: text,
-        model_id: 'eleven_multilingual_v2',
+        text,
+        model_id,
         voice_settings: {
           stability: 0.5,
-          similarity_boost: 0.8,
-          style: 0.2,
+          similarity_boost: 0.75,
+          style: 0.0,
           use_speaker_boost: true
         }
       }),

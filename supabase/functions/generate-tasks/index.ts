@@ -65,66 +65,21 @@ async function generateTaskList(items: DetectedItem[]) {
     )
   }
 
-const prompt = `Based on these detected items: ${JSON.stringify(items)}
+  const prompt = `Based on these detected items: ${JSON.stringify(items)}
 
-INTELLIGENT CONTEXTUAL TASK GENERATION:
+Create a categorized to-do list for cleaning and organizing this room. Group similar tasks together and provide realistic time estimates.
 
-VISUAL CONTEXT INTERPRETATION RULES:
-- Clothes near laundry basket/hamper = "Do laundry" (wash, dry, fold)
-- Clothes scattered on floor/bed/chair = "Organize clothing" (sort, put away properly)
-- Dirty dishes in sink/counter = "Wash dishes and clean kitchen surfaces"
-- Food items/groceries visible = "Put away groceries and organize pantry"
-- Unmade bed = "Make bed and tidy bedroom"
-- Towels on floor/scattered = "Hang towels properly and organize bathroom"
-- Shoes scattered = "Organize shoes on rack or in closet"
-- Books/papers messy = "Sort and organize reading materials"
-- Electronics/cables tangled = "Organize electronics and manage cables"
-- Trash/recyclables visible = "Empty trash and take out recycling"
-- Multiple items same room = CREATE ONE COMPREHENSIVE ROOM-BASED TASK
-
-LOCATION-BASED CONSOLIDATION:
-- Kitchen items → "Clean and organize kitchen" (dishes, counters, appliances)
-- Bathroom items → "Clean and organize bathroom" (towels, toiletries, surfaces)
-- Bedroom items → "Tidy and organize bedroom" (bed, clothes, surfaces)
-- Living room → "Clean and organize living space" (furniture, electronics, books)
-
-SMART TASK PRIORITIES:
-1. HIGH: Health/hygiene (dirty dishes, trash, bathroom cleaning)
-2. MEDIUM: Organization (clothes, books, general tidying)
-3. LOW: Aesthetic improvements (decorating, non-essential organizing)
-
-TASK WORKFLOW LOGIC:
-1. CLEAR first: Remove trash, return misplaced items
-2. CLEAN next: Wash items that need water/supplies
-3. ORGANIZE last: Put items in permanent homes
-
-CONTEXTUAL INTELLIGENCE EXAMPLES:
-- If laundry basket is visible with clothes → "Do laundry load (wash, dry, fold clothes from basket)"
-- If kitchen sink has dishes → "Wash dishes and wipe down kitchen counters" 
-- If bed is unmade → "Make bed and organize bedroom surfaces"
-- If multiple bathroom items → "Clean bathroom and organize toiletries"
-
-NEVER create generic tasks like "organize items" or "clean things". ALWAYS be specific about:
-- What exactly needs to be done
-- Where it needs to be done
-- Why it makes sense (context from what was detected)
-
-TIME ESTIMATES (be realistic):
-- Simple tasks (make bed): 5-10 minutes
-- Medium tasks (wash dishes): 15-25 minutes  
-- Complex tasks (full room organization): 30-45 minutes
-
-Return JSON array with this structure:
+Return a JSON array of tasks with this structure:
 {
   "id": "unique_id",
-  "category": "Kitchen/Bathroom/Bedroom/Living Room/General",
-  "description": "Specific, contextual action based on visual detection",
+  "category": "Kitchen/Bathroom/Living Room/Bedroom/General",
+  "description": "Clear and specific task description",
   "estimatedTime": minutes_as_number,
   "priority": "high/medium/low",
   "completed": false
 }
 
-Be ruthlessly intelligent and contextual. Only return valid JSON, no other text.`
+Prioritize tasks by hygiene and safety first, then organization. Only return valid JSON, no other text.`
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
