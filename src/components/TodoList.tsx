@@ -163,9 +163,9 @@ export const TodoList: React.FC<TodoListProps> = ({
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* Progress Header */}
-      <Card className="p-6 bg-gradient-hero border-0 shadow-medium">
+      <Card className="p-6 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold mb-2">Room Cleanup Plan</h2>
+          <h2 className="text-2xl font-bold mb-2 text-foreground">Room Cleanup Plan</h2>
           <p className="text-muted-foreground">
             AI-generated tasks to make your room spotless
           </p>
@@ -193,7 +193,7 @@ export const TodoList: React.FC<TodoListProps> = ({
       </Card>
 
       {/* AI Mascot & Audio Controls */}
-      <Card className="p-8 bg-gradient-card border-0 shadow-medium">
+      <Card className="p-8 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg">
         <div className="flex flex-col items-center space-y-6">
           <AIMascot 
             onClick={handlePlayGuidance}
@@ -202,7 +202,7 @@ export const TodoList: React.FC<TodoListProps> = ({
           />
           
           <div className="text-center">
-            <h3 className="text-xl font-bold mb-2">🎯 AI Cleaning Coach</h3>
+            <h3 className="text-xl font-bold mb-2 text-foreground">🎯 AI Cleaning Coach</h3>
             <p className="text-base text-muted-foreground mb-4">
               {audioLoading 
                 ? "🎵 Generating your personalized audio guidance..."
@@ -245,7 +245,7 @@ export const TodoList: React.FC<TodoListProps> = ({
       {/* Task List */}
       <div className="space-y-3">
         {tasks.map((task) => (
-          <Card key={task.id} className="overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200">
+          <Card key={task.id} className="overflow-hidden bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-200">
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-start gap-3 flex-1">
@@ -253,7 +253,7 @@ export const TodoList: React.FC<TodoListProps> = ({
                     <div className="flex items-center gap-2 mb-1">
                       <p className={cn(
                         "font-medium transition-all duration-200",
-                        task.completed ? "line-through text-muted-foreground" : ""
+                        task.completed ? "line-through text-muted-foreground" : "text-foreground"
                       )}>
                         {task.description}
                       </p>
@@ -328,7 +328,7 @@ export const TodoList: React.FC<TodoListProps> = ({
                       </Button>
                       <p className={cn(
                         "text-sm flex-1",
-                        subtask.completed ? "line-through text-muted-foreground" : ""
+                        subtask.completed ? "line-through text-muted-foreground" : "text-foreground"
                       )}>
                         {subtask.description}
                       </p>

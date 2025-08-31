@@ -65,61 +65,66 @@ async function generateTaskList(items: DetectedItem[]) {
     )
   }
 
-  const prompt = `Based on these detected items: ${JSON.stringify(items)}
+const prompt = `Based on these detected items: ${JSON.stringify(items)}
 
-EXTRAPOLATE INTELLIGENTLY using VISUAL CONTEXT and REAL-WORLD LOGIC:
+INTELLIGENT CONTEXTUAL TASK GENERATION:
 
-CONTEXTUAL INTERPRETATION EXAMPLES:
-- Clothes in laundry basket/hamper = "Do laundry" (not "organize clothes")
-- Dirty dishes by sink/counter = "Wash dishes and clean kitchen" (not "organize dishes")
-- Books scattered on floor/desk = "Organize books on shelves" (not "arrange books")
-- Empty bottles/cans = "Take out recycling" (not "organize containers")
-- Unmade bed with pillows/sheets = "Make bed and organize bedroom" (not "fix bedding")
-- Food containers/groceries = "Put away groceries and organize pantry" (not "organize food items")
-- Towels on bathroom floor = "Hang towels and tidy bathroom" (not "organize towels")
-- Clothes on chair/floor = "Put clothes in closet or hamper" (not "move clothes")
-- Shoes scattered = "Organize shoes in closet/rack" (not "arrange footwear")
-- Papers/documents messy = "Sort and file paperwork" (not "organize papers")
-- Electronics/cables tangled = "Organize tech setup and manage cables" (not "arrange electronics")
+VISUAL CONTEXT INTERPRETATION RULES:
+- Clothes near laundry basket/hamper = "Do laundry" (wash, dry, fold)
+- Clothes scattered on floor/bed/chair = "Organize clothing" (sort, put away properly)
+- Dirty dishes in sink/counter = "Wash dishes and clean kitchen surfaces"
+- Food items/groceries visible = "Put away groceries and organize pantry"
+- Unmade bed = "Make bed and tidy bedroom"
+- Towels on floor/scattered = "Hang towels properly and organize bathroom"
+- Shoes scattered = "Organize shoes on rack or in closet"
+- Books/papers messy = "Sort and organize reading materials"
+- Electronics/cables tangled = "Organize electronics and manage cables"
+- Trash/recyclables visible = "Empty trash and take out recycling"
+- Multiple items same room = CREATE ONE COMPREHENSIVE ROOM-BASED TASK
 
-ADVANCED CONTEXTUAL RULES:
-- IF items are near sink/kitchen → cleaning/washing tasks
-- IF items are on floor → put away/organize tasks  
-- IF items are scattered → consolidation/organization tasks
-- IF items look dirty/used → cleaning tasks first, then organizing
-- IF storage containers visible → utilize them in task descriptions
+LOCATION-BASED CONSOLIDATION:
+- Kitchen items → "Clean and organize kitchen" (dishes, counters, appliances)
+- Bathroom items → "Clean and organize bathroom" (towels, toiletries, surfaces)
+- Bedroom items → "Tidy and organize bedroom" (bed, clothes, surfaces)
+- Living room → "Clean and organize living space" (furniture, electronics, books)
 
-CRITICAL CONSOLIDATION - NO DUPLICATES:
-- Multiple dirty items in same area = ONE comprehensive cleaning task
-- Multiple similar items = ONE organizing task covering all
-- Never create separate tasks for items that can be handled together
-- Merge bathroom items, kitchen items, bedroom items into area-based tasks
+SMART TASK PRIORITIES:
+1. HIGH: Health/hygiene (dirty dishes, trash, bathroom cleaning)
+2. MEDIUM: Organization (clothes, books, general tidying)
+3. LOW: Aesthetic improvements (decorating, non-essential organizing)
 
-LOGICAL WORKFLOW SEQUENCE:
-1. CLEARING PHASE: Remove trash, return misplaced items to proper rooms
-2. CLEANING PHASE: Wash dishes, do laundry, clean surfaces (items that need water/supplies)  
-3. ORGANIZING PHASE: Put items in permanent homes, arrange furniture
-4. FINISHING PHASE: Make beds, final tidying touches
+TASK WORKFLOW LOGIC:
+1. CLEAR first: Remove trash, return misplaced items
+2. CLEAN next: Wash items that need water/supplies
+3. ORGANIZE last: Put items in permanent homes
 
-TASK NAMING MUST BE SPECIFIC AND ACTIONABLE:
-✅ GOOD: "Do laundry and organize bedroom closet"
-✅ GOOD: "Wash dishes and wipe down kitchen counters"  
-✅ GOOD: "Sort mail and organize desk workspace"
-❌ BAD: "Take care of clothes"
-❌ BAD: "Clean kitchen items"
-❌ BAD: "Organize miscellaneous items"
+CONTEXTUAL INTELLIGENCE EXAMPLES:
+- If laundry basket is visible with clothes → "Do laundry load (wash, dry, fold clothes from basket)"
+- If kitchen sink has dishes → "Wash dishes and wipe down kitchen counters" 
+- If bed is unmade → "Make bed and organize bedroom surfaces"
+- If multiple bathroom items → "Clean bathroom and organize toiletries"
+
+NEVER create generic tasks like "organize items" or "clean things". ALWAYS be specific about:
+- What exactly needs to be done
+- Where it needs to be done
+- Why it makes sense (context from what was detected)
+
+TIME ESTIMATES (be realistic):
+- Simple tasks (make bed): 5-10 minutes
+- Medium tasks (wash dishes): 15-25 minutes  
+- Complex tasks (full room organization): 30-45 minutes
 
 Return JSON array with this structure:
 {
   "id": "unique_id",
-  "category": "Kitchen/Bathroom/Living Room/Bedroom/General",
-  "description": "Specific action that combines context + visual cues", 
+  "category": "Kitchen/Bathroom/Bedroom/Living Room/General",
+  "description": "Specific, contextual action based on visual detection",
   "estimatedTime": minutes_as_number,
   "priority": "high/medium/low",
   "completed": false
 }
 
-Be ruthlessly contextual and consolidate aggressively. Only return valid JSON, no other text.`
+Be ruthlessly intelligent and contextual. Only return valid JSON, no other text.`
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {

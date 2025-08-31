@@ -73,20 +73,13 @@ export const generateStepByStepGuidance = async (taskDescription: string, subtas
 
 export const speakText = async (text: string, volume: number = 0.8): Promise<void> => {
   try {
-    // Try Google Text-to-Speech API first with premium voice settings
+    // Use premium ElevenLabs API for high-quality voice
     const response = await fetch('https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/text-to-speech', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        text,
-        voice_name: 'en-US-Studio-Q', // Premium Studio voice - most natural
-        language_code: 'en-US',
-        speaking_rate: 1.1, // Slightly faster, more engaging
-        pitch: 0.5, // Warmer tone
-        volume_gain_db: 2.0 // Slightly louder
-      }),
+      body: JSON.stringify({ text }),
     });
 
     if (response.ok) {
@@ -94,7 +87,7 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
       const audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
-      audio.volume = volume / 100;
+      audio.volume = volume;
       
       return new Promise((resolve, reject) => {
         audio.onended = () => {
@@ -108,12 +101,12 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
         audio.play();
       });
     } else {
-      throw new Error('Google TTS API failed, falling back to browser speech');
+      throw new Error('ElevenLabs TTS API failed, falling back to browser speech');
     }
   } catch (error) {
-    console.warn('Google TTS failed, using browser speech synthesis:', error);
+    console.warn('ElevenLabs TTS failed, using browser speech synthesis:', error);
     
-    // Fallback to browser speech synthesis
+    // Fallback to browser speech synthesis with better voice selection
     return new Promise((resolve, reject) => {
       if (!('speechSynthesis' in window)) {
         reject(new Error('Speech synthesis not supported'));
@@ -122,54 +115,43 @@ export const speakText = async (text: string, volume: number = 0.8): Promise<voi
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.9;
-      utterance.pitch = 1.1;
-      utterance.volume = volume / 100;
+      utterance.pitch = 1.0;
+      utterance.volume = volume;
       
-      // Wait for voices to load, then select the best one
-      const selectVoice = () => {
+      // Select the best available voice
+      const selectBestVoice = () => {
         const voices = speechSynthesis.getVoices();
         
-        // Prefer high-quality voices in order of preference
-        const preferredVoices = [
-          // Google voices (highest quality)
+        // Look for premium voices in order of preference
+        const premiumVoices = [
           'Google US English',
-          'Google UK English Female',
-          'Google UK English Male',
-          
-          // System voices with "Natural" or "Enhanced"
-          voices.find(voice => voice.name.includes('Natural')),
-          voices.find(voice => voice.name.includes('Enhanced')),
-          voices.find(voice => voice.name.includes('Premium')),
-          
-          // Microsoft voices
-          voices.find(voice => voice.name.includes('Microsoft') && voice.name.includes('Aria')),
-          voices.find(voice => voice.name.includes('Microsoft') && voice.name.includes('Jenny')),
-          
-          // Other good options
-          voices.find(voice => voice.name.includes('Samantha')),
-          voices.find(voice => voice.name.includes('Alex')),
-          voices.find(voice => voice.name.includes('Victoria')),
-        ].filter(Boolean);
-
-        const selectedVoice = preferredVoices.find(voice => 
-          typeof voice === 'string' ? 
-            voices.find(v => v.name === voice) : 
-            voice
-        );
-
-        if (selectedVoice) {
-          utterance.voice = typeof selectedVoice === 'string' ? 
-            voices.find(v => v.name === selectedVoice) || null :
-            selectedVoice;
+          'Microsoft Aria Online (Natural) - English (United States)',
+          'Microsoft Jenny Online (Natural) - English (United States)',
+          'Samantha',
+          'Alex',
+        ];
+        
+        for (const voiceName of premiumVoices) {
+          const voice = voices.find(v => v.name.includes(voiceName) || v.name === voiceName);
+          if (voice) {
+            utterance.voice = voice;
+            break;
+          }
+        }
+        
+        // If no premium voice found, use the default English voice
+        if (!utterance.voice) {
+          const englishVoice = voices.find(v => v.lang.startsWith('en-'));
+          if (englishVoice) utterance.voice = englishVoice;
         }
       };
 
       // Try to select voice immediately
-      selectVoice();
+      selectBestVoice();
       
       // If no voices available, wait for them to load
       if (speechSynthesis.getVoices().length === 0) {
-        speechSynthesis.addEventListener('voiceschanged', selectVoice, { once: true });
+        speechSynthesis.addEventListener('voiceschanged', selectBestVoice, { once: true });
       }
 
       utterance.onend = () => resolve();

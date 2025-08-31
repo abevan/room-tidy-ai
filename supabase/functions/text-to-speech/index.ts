@@ -8,7 +8,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice_name = 'en-US-Studio-Q', language_code = 'en-US', speaking_rate = 1.1, pitch = 0.5, volume_gain_db = 2.0 } = await req.json()
+    const { text } = await req.json()
 
     if (!text) {
       return new Response(
@@ -17,57 +17,44 @@ serve(async (req) => {
       )
     }
 
-    const googleApiKey = Deno.env.get('GOOGLE_API_KEY')
-    if (!googleApiKey) {
+    const elevenLabsApiKey = Deno.env.get('ELEVENLABS_API_KEY')
+    if (!elevenLabsApiKey) {
       return new Response(
-        JSON.stringify({ error: 'Google API key not configured' }),
+        JSON.stringify({ error: 'ElevenLabs API key not configured' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
 
-    // Call Google Cloud Text-to-Speech API
-    const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleApiKey}`, {
+    // Use ElevenLabs API with premium voice (Aria - natural and friendly)
+    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x', {
       method: 'POST',
       headers: {
+        'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
+        'xi-api-key': elevenLabsApiKey,
       },
       body: JSON.stringify({
-        input: { text },
-        voice: {
-          languageCode: language_code,
-          name: voice_name,
-          ssmlGender: 'FEMALE'
-        },
-        audioConfig: {
-          audioEncoding: 'MP3',
-          speakingRate: speaking_rate,
-          pitch: pitch,
-          volumeGainDb: volume_gain_db,
-          effectsProfileId: ['telephony-class-application'] // Enhanced audio quality
+        text: text,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.8,
+          style: 0.2,
+          use_speaker_boost: true
         }
       }),
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Google Text-to-Speech API error:', response.status, errorText)
+      console.error('ElevenLabs API error:', response.status, errorText)
       return new Response(
         JSON.stringify({ error: 'Failed to generate speech' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: response.status }
       )
     }
 
-    const data = await response.json()
-    
-    if (!data.audioContent) {
-      return new Response(
-        JSON.stringify({ error: 'No audio content received' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
-    }
-
-    // Convert base64 to binary
-    const audioData = Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))
+    const audioData = await response.arrayBuffer()
 
     return new Response(audioData, {
       headers: {
