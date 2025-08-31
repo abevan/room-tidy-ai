@@ -91,18 +91,20 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
       <Card className="w-full max-w-md shadow-strong border-0">
-        <CardHeader className="space-y-4 text-center pb-4">
-          <div className="flex justify-center mb-2">
-            <AIMascot />
+        <CardHeader className="space-y-4 text-center pb-6">
+          <div className="flex justify-center">
+            <div className="transform scale-75">
+              <AIMascot />
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               CleanSight AI
             </h1>
-            <CardTitle className="text-xl font-semibold">
+            <CardTitle className="text-lg font-semibold text-foreground">
               {isLogin ? 'Welcome back' : 'Join CleanSight'}
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-sm text-muted-foreground">
               {isLogin 
                 ? 'Sign in to continue your cleaning journey' 
                 : 'Your AI-powered cleaning companion awaits'
