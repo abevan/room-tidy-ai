@@ -20,8 +20,10 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
   const [recordedVideo, setRecordedVideo] = useState<File | null>(null);
   const [showCameraPreview, setShowCameraPreview] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   // Clean up camera stream on unmount
@@ -29,6 +31,9 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
+      }
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
       }
     };
   }, [stream]);
@@ -154,6 +159,13 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
     if (!stream) return;
     
     setIsRecording(true);
+    setRecordingTime(0);
+    
+    // Start recording timer
+    recordingIntervalRef.current = setInterval(() => {
+      setRecordingTime(prev => prev + 1);
+    }, 1000);
+    
     const recorder = new MediaRecorder(stream);
     const chunks: Blob[] = [];
     
@@ -168,6 +180,12 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
       const file = new File([blob], `room-video-${Date.now()}.webm`, { type: 'video/webm' });
       setRecordedVideo(file);
       setIsRecording(false);
+      
+      // Clear timer
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
     };
     
     mediaRecorderRef.current = recorder;
@@ -185,11 +203,20 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
   };
 
   const confirmRecordedVideo = async () => {
     if (recordedVideo) {
-      await handleFileSelect(recordedVideo);
+      // Skip validation for camera-recorded videos
+      setSelectedFile(recordedVideo);
+      const url = URL.createObjectURL(recordedVideo);
+      setVideoPreview(url);
+      onVideoSelect(recordedVideo);
+      
       // Clean up camera
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -257,7 +284,7 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({ onVideoSelect, onProce
               {isRecording && (
                 <div className="absolute top-4 left-4 flex items-center gap-2 bg-destructive/90 text-white px-3 py-1 rounded-full">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                  <span className="text-sm font-medium">REC</span>
+                  <span className="text-sm font-medium">REC {recordingTime}s / 60s</span>
                 </div>
               )}
             </div>
