@@ -56,9 +56,20 @@ type AppState = 'hero' | 'upload' | 'processing' | 'generating' | 'results';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
-  const [isPWA, setIsPWA] = useState(false);
   const { isInstallable } = usePWA();
   const navigate = useNavigate();
+  
+  const [isPWA, setIsPWA] = useState(false);
+  const [appState, setAppState] = useState<AppState>('hero');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [processingStep, setProcessingStep] = useState(1);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [detectedItems, setDetectedItems] = useState<DetectedItem[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const { toast } = useToast();
 
   // Detect PWA mode
   useEffect(() => {
@@ -84,18 +95,18 @@ const Index = () => {
       }
     }
   }, [user, loading, navigate, isPWA]);
-  
-  const [appState, setAppState] = useState<AppState>('hero');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [processingStep, setProcessingStep] = useState(1);
-  const [processingProgress, setProcessingProgress] = useState(0);
-  const [detectedItems, setDetectedItems] = useState<DetectedItem[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const { toast } = useToast();
 
+  // Show install prompt after 5 seconds if app is installable
+  useEffect(() => {
+    if (isInstallable && !showInstallPrompt) {
+      console.log('🔧 PWA: App is installable, showing prompt in 5 seconds');
+      const timer = setTimeout(() => {
+        console.log('🔧 PWA: Showing install prompt now');
+        setShowInstallPrompt(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isInstallable, showInstallPrompt]);
   const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
   
   // Show loading with PWA-specific styling
@@ -117,17 +128,6 @@ const Index = () => {
     return null;
   }
 
-  // Show install prompt after 5 seconds if app is installable
-  useEffect(() => {
-    if (isInstallable && !showInstallPrompt) {
-      console.log('🔧 PWA: App is installable, showing prompt in 5 seconds');
-      const timer = setTimeout(() => {
-        console.log('🔧 PWA: Showing install prompt now');
-        setShowInstallPrompt(true);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [isInstallable, showInstallPrompt]);
 
   const handleSignOut = async () => {
     await signOut();
