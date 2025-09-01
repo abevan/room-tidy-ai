@@ -1,4 +1,4 @@
-const CACHE_NAME = 'room-tidy-ai-v2'; // Updated version to clear old cache
+const CACHE_NAME = 'room-tidy-ai-v3'; // Updated version to clear old cache
 const staticCache = [
   '/',
   '/manifest.json',
@@ -19,7 +19,7 @@ const isAuthRoute = (url) => {
 
 // Install event - cache static resources only
 self.addEventListener('install', (event) => {
-  console.log('🔧 SW: Installing service worker v2');
+  console.log('🔧 SW: Installing service worker v3');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -89,7 +89,7 @@ self.addEventListener('fetch', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('🔧 SW: Activating service worker v2');
+  console.log('🔧 SW: Activating service worker v3');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(

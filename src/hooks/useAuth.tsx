@@ -9,15 +9,13 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Default context value to prevent undefined errors
-const defaultAuthContext: AuthContextType = {
+// Create context with default value to prevent undefined errors
+const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
   signOut: async () => {}
-};
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -103,12 +101,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  
-  // Defensive check - return default context if undefined to prevent crashes
-  if (context === undefined) {
-    console.warn('🔧 Auth: useAuth called outside of AuthProvider, using default context');
-    return defaultAuthContext;
-  }
-  
   return context;
 };
