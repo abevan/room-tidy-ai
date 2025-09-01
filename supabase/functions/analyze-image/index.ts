@@ -36,10 +36,16 @@ serve(async (req) => {
     console.log('MIME type:', mimeType)
 
     const apiKey = Deno.env.get('GOOGLE_API_KEY')
-    if (!apiKey) {
-      console.error('Google API key not found in environment')
+    console.log('Google API key exists:', !!apiKey)
+    console.log('Google API key length:', apiKey?.length || 0)
+    
+    if (!apiKey || apiKey.trim() === '') {
+      console.error('Google API key not found or empty in environment')
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
+        JSON.stringify({ 
+          error: 'Google Vision API not configured',
+          details: 'The Google Cloud Vision API key is missing or invalid. Please check your Supabase secrets configuration.'
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -98,7 +104,23 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Google API error:', response.status, errorText)
-      throw new Error(`Google API error: ${response.status} - ${errorText}`)
+      
+      let errorMessage = 'Failed to analyze image with Google Vision AI'
+      if (response.status === 401) {
+        errorMessage = 'Google Vision API authentication failed. Please check your API key configuration.'
+      } else if (response.status === 403) {
+        errorMessage = 'Google Vision API access denied. Please check your API key permissions.'
+      } else if (response.status === 429) {
+        errorMessage = 'Google Vision API rate limit exceeded. Please try again in a moment.'
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: errorMessage,
+          details: `API returned ${response.status}: ${response.statusText}`
+        }),
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const data = await response.json()

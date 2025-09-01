@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client'
+
 interface DetectedObject {
   id: string;
   name: string;
@@ -63,7 +65,7 @@ export const analyzeImageWithGemini = async (imageBlob: Blob): Promise<DetectedO
     
     // Input validation
     if (!imageBlob || imageBlob.size === 0) {
-      throw new Error('Invalid image file');
+      throw new Error('Invalid image file provided');
     }
 
     console.log('Image details:', {
@@ -96,49 +98,43 @@ export const analyzeImageWithGemini = async (imageBlob: Blob): Promise<DetectedO
     });
     
     console.log('Base64 conversion complete, length:', base64Data.length);
-    console.log('Calling Edge Function for image analysis...');
+    console.log('Calling Supabase Edge Function for image analysis...');
     
-    // Call secure Edge Function
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    console.log('Environment check:', {
-      supabaseUrl: supabaseUrl ? 'Set' : 'Missing',
-      supabaseKey: supabaseKey ? 'Set' : 'Missing'
-    });
-    
-    
-    const response = await fetch(`https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/analyze-image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM`
-      },
-      body: JSON.stringify({
+    // Call Supabase Edge Function using the client
+    const { data, error } = await supabase.functions.invoke('analyze-image', {
+      body: {
         imageData: base64Data,
         mimeType: imageBlob.type
-      })
+      }
     });
 
-    console.log('Edge Function response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Edge Function error details:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText
-      });
-      throw new Error(`Analysis failed: ${response.status} - ${errorText}`);
+    if (error) {
+      console.error('Supabase function error:', error);
+      throw new Error(`Image analysis service error: ${error.message}`);
     }
 
-    const responseData = await response.json();
-    console.log('Edge Function response data:', responseData);
-    
-    const { detectedObjects } = responseData;
+    if (!data) {
+      throw new Error('No response from image analysis service');
+    }
+
+    if (data.error) {
+      console.error('Analysis error:', data.error, data.details);
+      // Provide user-friendly error messages based on the error type
+      if (data.error.includes('API key') || data.error.includes('not configured')) {
+        throw new Error('Google Vision API is not properly configured. Please contact support.');
+      } else if (data.error.includes('rate limit')) {
+        throw new Error('Service temporarily unavailable due to high demand. Please try again in a moment.');
+      } else if (data.error.includes('authentication') || data.error.includes('access denied')) {
+        throw new Error('Image analysis service authentication failed. Please contact support.');
+      } else {
+        throw new Error(data.details || data.error || 'Failed to analyze image');
+      }
+    }
+
+    const { detectedObjects } = data;
 
     if (!detectedObjects || !Array.isArray(detectedObjects)) {
-      console.error('Invalid response format:', responseData);
+      console.error('Invalid response format:', data);
       throw new Error('Invalid response format from analysis service');
     }
 
@@ -155,7 +151,20 @@ export const analyzeImageWithGemini = async (imageBlob: Blob): Promise<DetectedO
 
   } catch (error) {
     console.error('=== Image analysis error ===', error);
-    throw error instanceof Error ? error : new Error('Failed to analyze image');
+    
+    // Enhance error message for better user experience
+    if (error instanceof Error) {
+      // If it's already a user-friendly error, pass it through
+      if (error.message.includes('Google Vision') || 
+          error.message.includes('Service temporarily') ||
+          error.message.includes('authentication failed') ||
+          error.message.includes('contact support')) {
+        throw error;
+      }
+    }
+    
+    // Default fallback error
+    throw new Error('Could not analyze the image. Please ensure your image is clear and shows rooms or objects that need cleaning.');
   }
 };
 
