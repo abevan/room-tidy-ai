@@ -54,7 +54,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
           password
         });
         if (error) throw error;
-        onSuccess();
+        // Navigation is handled by Auth.tsx useEffect watching user state
       } else {
         const redirectUrl = `${window.location.origin}/`;
         const {
