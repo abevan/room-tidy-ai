@@ -1,5 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
-
 interface DetectedObject {
   id: string;
   name: string;
@@ -100,27 +98,47 @@ export const analyzeImageWithGemini = async (imageBlob: Blob): Promise<DetectedO
     console.log('Base64 conversion complete, length:', base64Data.length);
     console.log('Calling Edge Function for image analysis...');
     
-    // Call secure Edge Function using Supabase client
-    const { data, error } = await supabase.functions.invoke('analyze-image', {
-      body: {
+    // Call secure Edge Function
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    console.log('Environment check:', {
+      supabaseUrl: supabaseUrl ? 'Set' : 'Missing',
+      supabaseKey: supabaseKey ? 'Set' : 'Missing'
+    });
+    
+    
+    const response = await fetch(`https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/analyze-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM`
+      },
+      body: JSON.stringify({
         imageData: base64Data,
         mimeType: imageBlob.type
-      }
+      })
     });
 
-    console.log('Edge Function response received');
+    console.log('Edge Function response status:', response.status);
 
-    if (error) {
-      console.error('Edge Function error details:', error);
-      throw new Error(`Analysis failed: ${error.message}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Edge Function error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`Analysis failed: ${response.status} - ${errorText}`);
     }
 
-    console.log('Edge Function response data:', data);
+    const responseData = await response.json();
+    console.log('Edge Function response data:', responseData);
     
-    const { detectedObjects } = data;
+    const { detectedObjects } = responseData;
 
     if (!detectedObjects || !Array.isArray(detectedObjects)) {
-      console.error('Invalid response format:', data);
+      console.error('Invalid response format:', responseData);
       throw new Error('Invalid response format from analysis service');
     }
 

@@ -1,5 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
-
 interface DetectedItem {
   id: string;
   name: string;
@@ -31,18 +29,23 @@ export const generateTodoList = async (items: DetectedItem[]): Promise<Task[]> =
     }
 
     // Call secure Edge Function using the Supabase client
-    const { data, error } = await supabase.functions.invoke('generate-tasks', {
-      body: {
+    const response = await fetch(`https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/generate-tasks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM`
+      },
+      body: JSON.stringify({
         action: 'generateTasks',
         items: items
-      }
+      })
     });
 
-    if (error) {
-      throw new Error(`Task generation failed: ${error.message}`);
+    if (!response.ok) {
+      throw new Error(`Task generation failed: ${response.status}`);
     }
 
-    const { tasks } = data;
+    const { tasks } = await response.json();
 
     // Validate and format tasks (preserve subtasks from edge function)
     return tasks.map((task: any, index: number) => ({
@@ -76,18 +79,23 @@ export const breakdownTask = async (taskDescription: string): Promise<Subtask[]>
     const sanitizedDescription = taskDescription.trim().slice(0, 500);
 
     // Call secure Edge Function using the Supabase client
-    const { data, error } = await supabase.functions.invoke('generate-tasks', {
-      body: {
+    const response = await fetch(`https://fjnylpbqothaykvdqcsr.supabase.co/functions/v1/generate-tasks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqbnlscGJxb3RoYXlrdmRxY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2NTg2MDMsImV4cCI6MjA3MjIzNDYwM30.VSEEsQxgzsHDl51nEGdTNePA8mq2A8mwtCZbNaWhABM`
+      },
+      body: JSON.stringify({
         action: 'breakdownTask',
         taskDescription: sanitizedDescription
-      }
+      })
     });
 
-    if (error) {
-      throw new Error(`Task breakdown failed: ${error.message}`);
+    if (!response.ok) {
+      throw new Error(`Task breakdown failed: ${response.status}`);
     }
 
-    const { subtasks } = data;
+    const { subtasks } = await response.json();
 
     // Validate and format subtasks
     return subtasks.map((subtask: any, index: number) => ({

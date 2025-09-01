@@ -1,7 +1,1 @@
 project_id = "fjnylpbqothaykvdqcsr"
-
-[functions.analyze-image]
-verify_jwt = false
-
-[functions.generate-tasks]
-verify_jwt = false
