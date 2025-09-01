@@ -1,37 +1,35 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthForm } from '@/components/AuthForm';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Auth() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    // Check if user is already authenticated
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/');
-      }
-    };
-
-    checkAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session) {
-          navigate('/');
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    // Only redirect if we have a confirmed user and not loading
+    if (user && !loading) {
+      console.log('Redirecting authenticated user to home');
+      navigate('/');
+    }
+  }, [user, loading, navigate]);
 
   const handleAuthSuccess = () => {
     navigate('/');
   };
+
+  // Show loading state while auth is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return <AuthForm onSuccess={handleAuthSuccess} />;
 }

@@ -20,18 +20,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+        console.log('Auth state changed:', event, session?.user?.email || 'no user');
+        
+        // Handle SIGNED_OUT event explicitly to clear invalid tokens
+        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          setSession(session);
+          setUser(session?.user ?? null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
         setLoading(false);
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Check for existing session with error handling
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (error) {
+          console.error('Session error:', error);
+          // Clear invalid session
+          setSession(null);
+          setUser(null);
+        } else {
+          console.log('Initial session:', session?.user?.email || 'no session');
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Failed to get session:', error);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+      });
 
     return () => subscription.unsubscribe();
   }, []);
