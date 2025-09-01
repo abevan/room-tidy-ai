@@ -56,8 +56,35 @@ type AppState = 'hero' | 'upload' | 'processing' | 'generating' | 'results';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
+  const [isPWA, setIsPWA] = useState(false);
   const { isInstallable } = usePWA();
   const navigate = useNavigate();
+
+  // Detect PWA mode
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isIOSStandalone = 'standalone' in window.navigator && (window.navigator as any).standalone;
+    const isPWAMode = isStandalone || isIOSStandalone;
+    
+    console.log('🔧 Index: PWA mode detected:', isPWAMode);
+    setIsPWA(isPWAMode);
+  }, []);
+
+  // Auth redirect effect with PWA-specific handling
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log('🔧 Index: Redirecting to auth, PWA mode:', isPWA);
+      // For PWA mode, add a small delay to ensure proper navigation
+      if (isPWA) {
+        setTimeout(() => {
+          navigate('/auth', { replace: true });
+        }, 100);
+      } else {
+        navigate('/auth', { replace: true });
+      }
+    }
+  }, [user, loading, navigate, isPWA]);
+  
   const [appState, setAppState] = useState<AppState>('hero');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
@@ -70,21 +97,16 @@ const Index = () => {
   const { toast } = useToast();
 
   const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
-
-  // Redirect to auth if not authenticated and not loading
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth', { replace: true });
-    }
-  }, [user, loading, navigate]);
   
-  // Show loading while auth state is being determined
+  // Show loading with PWA-specific styling
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">
+            {isPWA ? 'Initializing PWA...' : 'Loading...'}
+          </p>
         </div>
       </div>
     );

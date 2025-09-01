@@ -23,31 +23,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPWA, setIsPWA] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
+    // Detect PWA/standalone mode
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isIOSStandalone = 'standalone' in window.navigator && (window.navigator as any).standalone;
+    const isPWAMode = isStandalone || isIOSStandalone;
+    
+    console.log('🔧 Auth: PWA mode detected:', isPWAMode);
+    setIsPWA(isPWAMode);
+
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state change:', event, session?.user?.id);
+        console.log('🔧 Auth: State change:', event, session?.user?.id, 'PWA:', isPWAMode);
+        if (mounted) {
+          // For PWA mode, add extra delay to ensure proper state updates
+          if (isPWAMode) {
+            setTimeout(() => {
+              setSession(session);
+              setUser(session?.user ?? null);
+              setLoading(false);
+            }, 100);
+          } else {
+            setSession(session);
+            setUser(session?.user ?? null);
+            setLoading(false);
+          }
+        }
+      }
+    );
+
+    // Check for existing session with retry logic for PWA
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('🔧 Auth: Initial session check:', session?.user?.id, 'Error:', error);
+        
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
         }
+      } catch (error) {
+        console.error('🔧 Auth: Session check failed:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    );
+    };
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.id);
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    });
+    // For PWA mode, add a small delay to ensure everything is initialized
+    if (isPWAMode) {
+      setTimeout(checkSession, 200);
+    } else {
+      checkSession();
+    }
 
     return () => {
       mounted = false;
@@ -56,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = async () => {
+    console.log('🔧 Auth: Signing out, PWA mode:', isPWA);
     await supabase.auth.signOut();
   };
 
@@ -71,7 +106,7 @@ export const useAuth = () => {
   
   // Defensive check - return default context if undefined to prevent crashes
   if (context === undefined) {
-    console.warn('useAuth called outside of AuthProvider, using default context');
+    console.warn('🔧 Auth: useAuth called outside of AuthProvider, using default context');
     return defaultAuthContext;
   }
   
