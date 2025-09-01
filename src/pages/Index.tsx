@@ -55,7 +55,7 @@ interface Subtask {
 type AppState = 'hero' | 'upload' | 'processing' | 'generating' | 'results';
 
 const Index = () => {
-  const { user, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const { isInstallable } = usePWA();
   const navigate = useNavigate();
   const [appState, setAppState] = useState<AppState>('hero');
@@ -71,11 +71,29 @@ const Index = () => {
 
   const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
 
+  // Redirect to auth if not authenticated and not loading
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
+    if (!loading && !user) {
+      navigate('/auth', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
+  
+  // Show loading while auth state is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Don't render anything if user is not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
 
   // Show install prompt after 5 seconds if app is installable
   useEffect(() => {
@@ -217,10 +235,6 @@ const Index = () => {
     setDetectedItems([]);
     setTasks([]);
   };
-
-  if (!user) {
-    return null;
-  }
 
   const renderHeader = () => (
     <header className="relative z-20 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
