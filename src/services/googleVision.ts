@@ -120,8 +120,8 @@ export const analyzeImageWithGemini = async (imageBlob: Blob): Promise<DetectedO
     if (data.error) {
       console.error('Analysis error:', data.error, data.details);
       // Provide user-friendly error messages based on the error type
-      if (data.error.includes('API key') || data.error.includes('not configured')) {
-        throw new Error('Google Vision API is not properly configured. Please contact support.');
+      if (data.error === 'api_key_missing' || data.error.includes('API key') || data.error.includes('not configured')) {
+        throw new Error('Google Vision API is not properly configured. Please check that the GOOGLE_API_KEY secret is set in your Supabase project.');
       } else if (data.error.includes('rate limit')) {
         throw new Error('Service temporarily unavailable due to high demand. Please try again in a moment.');
       } else if (data.error.includes('authentication') || data.error.includes('access denied')) {

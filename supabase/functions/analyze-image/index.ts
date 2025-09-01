@@ -9,7 +9,7 @@ interface DetectedObject {
 }
 
 serve(async (req) => {
-  console.log('=== Analyze Image Function Called ===')
+  console.log('=== Analyze Image Function Called (v1.1) ===')
   
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -38,12 +38,15 @@ serve(async (req) => {
     const apiKey = Deno.env.get('GOOGLE_API_KEY')
     console.log('Google API key exists:', !!apiKey)
     console.log('Google API key length:', apiKey?.length || 0)
+    console.log('Available env vars:', Object.keys(Deno.env.toObject()))
     
     if (!apiKey || apiKey.trim() === '') {
       console.error('Google API key not found or empty in environment')
+      console.error('All available environment variables:', Object.keys(Deno.env.toObject()))
       return new Response(
         JSON.stringify({ 
-          error: 'Google Vision API not configured',
+          error: 'api_key_missing',
+          message: 'Google Vision API key is not configured. Please add the GOOGLE_API_KEY secret in Supabase.',
           details: 'The Google Cloud Vision API key is missing or invalid. Please check your Supabase secrets configuration.'
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
