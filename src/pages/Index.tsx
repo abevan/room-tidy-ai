@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { ModernHero } from '@/components/ModernHero';
 import { VideoUpload } from '@/components/VideoUpload';
 import { ProcessingState } from '@/components/ProcessingState';
-
 import { TodoList } from '@/components/TodoList';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { AuthProtectedRoute } from '@/components/AuthProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, LogOut, User } from 'lucide-react';
 import { analyzeVideoWithGemini } from '@/services/googleVision';
@@ -55,9 +54,16 @@ interface Subtask {
 type AppState = 'hero' | 'upload' | 'processing' | 'generating' | 'results';
 
 const Index = () => {
-  const { user, loading, signOut } = useAuth();
+  return (
+    <AuthProtectedRoute>
+      <IndexContent />
+    </AuthProtectedRoute>
+  );
+};
+
+const IndexContent = () => {
+  const { user, signOut } = useAuth();
   const { isInstallable } = usePWA();
-  const navigate = useNavigate();
   
   const [isPWA, setIsPWA] = useState(false);
   const [appState, setAppState] = useState<AppState>('hero');
@@ -81,21 +87,6 @@ const Index = () => {
     setIsPWA(isPWAMode);
   }, []);
 
-  // Auth redirect effect with PWA-specific handling
-  useEffect(() => {
-    if (!loading && !user) {
-      console.log('🔧 Index: Redirecting to auth, PWA mode:', isPWA);
-      // For PWA mode, add a small delay to ensure proper navigation
-      if (isPWA) {
-        setTimeout(() => {
-          navigate('/auth', { replace: true });
-        }, 100);
-      } else {
-        navigate('/auth', { replace: true });
-      }
-    }
-  }, [user, loading, navigate, isPWA]);
-
   // Show install prompt after 5 seconds if app is installable
   useEffect(() => {
     if (isInstallable && !showInstallPrompt) {
@@ -107,31 +98,12 @@ const Index = () => {
       return () => clearTimeout(timer);
     }
   }, [isInstallable, showInstallPrompt]);
-  const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
-  
-  // Show loading with PWA-specific styling
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">
-            {isPWA ? 'Initializing PWA...' : 'Loading...'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Don't render anything if user is not authenticated (will redirect)
-  if (!user) {
-    return null;
-  }
 
+  const totalTime = tasks.reduce((sum, task) => sum + task.timeEstimate, 0);
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/auth');
+    // AuthProtectedRoute will handle redirect automatically
   };
 
   const handleGetStarted = () => {
@@ -161,6 +133,11 @@ const Index = () => {
       console.log('Calling analyzeVideoWithGemini with file:', selectedFile.name, selectedFile.size, selectedFile.type);
       const detected = await analyzeVideoWithGemini(selectedFile);
       console.log('Analysis complete, detected items:', detected);
+      
+      if (!detected || detected.length === 0) {
+        throw new Error('No items detected in the video. Please try with a clearer video showing objects and areas that need cleaning.');
+      }
+      
       setDetectedItems(detected);
       
       setProcessingStep(3);
@@ -176,9 +153,21 @@ const Index = () => {
       
     } catch (error) {
       console.error('Processing error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to analyze video. Please try again.";
+      
+      // More specific error messages
+      let userFriendlyMessage = errorMessage;
+      if (errorMessage.includes('Failed to analyze any frames')) {
+        userFriendlyMessage = "Could not analyze the video frames. Please ensure your video is clear and shows rooms or objects that need cleaning.";
+      } else if (errorMessage.includes('500')) {
+        userFriendlyMessage = "Server error occurred during analysis. Please try again in a moment.";
+      } else if (errorMessage.includes('network')) {
+        userFriendlyMessage = "Network error. Please check your connection and try again.";
+      }
+      
       toast({
         title: "Processing Error",
-        description: error instanceof Error ? error.message : "Failed to analyze video. Please try again.",
+        description: userFriendlyMessage,
         variant: "destructive",
       });
       setAppState('upload');
