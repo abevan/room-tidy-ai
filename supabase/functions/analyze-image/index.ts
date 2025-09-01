@@ -9,7 +9,7 @@ interface DetectedObject {
 }
 
 serve(async (req) => {
-  console.log('=== Analyze Image Function Called (v1.1) ===')
+  console.log('=== Analyze Image Function Called (v1.2) ===')
   
   // Handle CORS
   if (req.method === 'OPTIONS') {

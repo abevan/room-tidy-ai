@@ -157,10 +157,12 @@ const IndexContent = () => {
       
       // More specific error messages
       let userFriendlyMessage = errorMessage;
-      if (errorMessage.includes('Failed to analyze any frames')) {
+      if (errorMessage.includes('Google Vision API is not properly configured') || errorMessage.includes('GOOGLE_API_KEY')) {
+        userFriendlyMessage = "The video analysis service is currently being configured. Please wait a moment and try again. If the issue persists, contact support.";
+      } else if (errorMessage.includes('Failed to analyze any frames')) {
         userFriendlyMessage = "Could not analyze the video frames. Please ensure your video is clear and shows rooms or objects that need cleaning.";
       } else if (errorMessage.includes('500')) {
-        userFriendlyMessage = "Server error occurred during analysis. Please try again in a moment.";
+        userFriendlyMessage = "Server error occurred during analysis. The service may be starting up - please try again in a moment.";
       } else if (errorMessage.includes('network')) {
         userFriendlyMessage = "Network error. Please check your connection and try again.";
       }
