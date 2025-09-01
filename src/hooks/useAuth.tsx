@@ -21,41 +21,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isPWA, setIsPWA] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    // Detect PWA/standalone mode
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isIOSStandalone = 'standalone' in window.navigator && (window.navigator as any).standalone;
-    const isPWAMode = isStandalone || isIOSStandalone;
-    
-    console.log('🔧 Auth: PWA mode detected:', isPWAMode);
-    setIsPWA(isPWAMode);
+    console.log('🔧 Auth: Initializing auth provider');
 
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('🔧 Auth: State change:', event, session?.user?.id, 'PWA:', isPWAMode);
+        console.log('🔧 Auth: State change:', event, session?.user?.id);
         if (mounted) {
-          // For PWA mode, add extra delay to ensure proper state updates
-          if (isPWAMode) {
-            setTimeout(() => {
-              setSession(session);
-              setUser(session?.user ?? null);
-              setLoading(false);
-            }, 100);
-          } else {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLoading(false);
-          }
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
         }
       }
     );
 
-    // Check for existing session with retry logic for PWA
+    // Check for existing session
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -69,26 +53,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('🔧 Auth: Session check failed:', error);
         if (mounted) {
+          setSession(null);
+          setUser(null);
           setLoading(false);
         }
       }
     };
 
-    // For PWA mode, add a small delay to ensure everything is initialized
-    if (isPWAMode) {
-      setTimeout(checkSession, 200);
-    } else {
-      checkSession();
-    }
+    checkSession();
+
+    // Fallback timeout to prevent infinite loading
+    const fallbackTimer = setTimeout(() => {
+      if (mounted) {
+        console.warn('🔧 Auth: Fallback timeout triggered, setting loading to false');
+        setLoading(false);
+      }
+    }, 5000);
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearTimeout(fallbackTimer);
     };
   }, []);
 
   const signOut = async () => {
-    console.log('🔧 Auth: Signing out, PWA mode:', isPWA);
+    console.log('🔧 Auth: Signing out');
     await supabase.auth.signOut();
   };
 
